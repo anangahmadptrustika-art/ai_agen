@@ -34,11 +34,11 @@ const API = {
     const r = await fetch(`/api/attendance${q}`);
     return r.json();
   },
-  async recordAttendance(memberId, method) {
+  async recordAttendance(memberId, method, date) {
     const r = await fetch('/api/attendance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ memberId, method }),
+      body: JSON.stringify({ memberId, method, date }),
     });
     if (!r.ok) throw new Error('Gagal mencatat absensi');
     return r.json();

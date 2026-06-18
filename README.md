@@ -23,11 +23,11 @@ Wajah dikenali  +  Tangan terangkat   ==>   Absensi tercatat ✓
 |---|---|
 | Pengenalan wajah | [face-api.js](https://github.com/vladmandic/face-api) (TensorFlow.js) — descriptor wajah 128 dimensi |
 | Deteksi angkat tangan | [MediaPipe Pose Landmarker](https://ai.google.dev/edge/mediapipe) — posisi pergelangan tangan vs bahu |
-| Backend | Node.js + Express |
-| Penyimpanan | File JSON (tanpa database/native dependency) |
+| Backend | Node.js + Express (serverless-ready untuk Vercel) |
+| Database | PostgreSQL (Vercel Postgres / Neon / Supabase) — fallback file JSON saat lokal |
 | Frontend | HTML + CSS + JavaScript (tanpa framework) |
 
-## 🚀 Cara Menjalankan
+## 🚀 Menjalankan Secara Lokal
 
 **Syarat:** Node.js v18+ dan browser modern (Chrome/Edge/Firefox) dengan webcam.
 
@@ -44,6 +44,55 @@ npm start
 
 > ⚠️ **Gunakan `http://localhost`** (bukan IP/`file://`). Browser hanya mengizinkan
 > akses kamera pada `localhost` atau koneksi HTTPS.
+
+Tanpa konfigurasi apa pun, secara lokal aplikasi memakai penyimpanan **file JSON**
+(folder `data/`). Untuk memakai Postgres saat lokal, salin `.env.example` → `.env`
+lalu isi `DATABASE_URL`.
+
+---
+
+## ☁️ Deploy Online ke Vercel (+ Database)
+
+Aplikasi sudah disiapkan untuk Vercel: frontend disajikan sebagai static,
+API berjalan sebagai serverless function (`api/index.js`), dan data disimpan di
+**PostgreSQL**. Karena filesystem Vercel bersifat sementara, **database wajib**
+dipakai di produksi.
+
+### Langkah 1 — Push ke GitHub
+Repo ini sudah di GitHub. Pastikan branch terbaru sudah ter-push.
+
+### Langkah 2 — Import ke Vercel
+1. Buka [vercel.com](https://vercel.com) → login dengan GitHub.
+2. **Add New… → Project** → pilih repository ini → **Import**.
+3. Biarkan setting default (tidak perlu build command khusus) → **Deploy**.
+
+### Langkah 3 — Buat Database Postgres
+**Cara termudah (Vercel Postgres):**
+1. Di dashboard project Vercel → tab **Storage** → **Create Database** → **Postgres**.
+2. Ikuti wizard → **Connect** ke project ini.
+3. Vercel otomatis menambahkan environment variable koneksi (`POSTGRES_URL`, dll).
+
+> Kode ini membaca variabel bernama **`DATABASE_URL`**. Jika Vercel hanya membuat
+> `POSTGRES_URL`, tambahkan satu env var lagi bernama `DATABASE_URL` dengan nilai
+> yang sama (Project → **Settings → Environment Variables**).
+
+**Alternatif (Neon / Supabase):**
+1. Buat database gratis di [neon.tech](https://neon.tech) atau [supabase.com](https://supabase.com).
+2. Salin **connection string** (format `postgres://user:pass@host/db?sslmode=require`).
+3. Di Vercel → **Settings → Environment Variables** → tambah `DATABASE_URL` = connection string tersebut.
+
+### Langkah 4 — Redeploy
+Setelah `DATABASE_URL` diset, buka tab **Deployments → Redeploy** agar variabel
+terbaca. Tabel database (`members`, `attendance`) **dibuat otomatis** saat
+pertama kali API dipanggil — tidak perlu migrasi manual.
+
+### Langkah 5 — Pakai
+Buka URL Vercel Anda (mis. `https://nama-app.vercel.app`). Karena Vercel pakai
+HTTPS, akses kamera langsung diizinkan dari perangkat mana pun. 🎉
+
+> 💡 Cek `https://nama-app.vercel.app/api/health` — bila menampilkan
+> `"backend":"postgres"`, berarti database sudah aktif. Bila `"json"`, berarti
+> `DATABASE_URL` belum terbaca (ulangi Langkah 3–4).
 
 ### Pemakaian
 
@@ -73,9 +122,15 @@ mengubah konstanta `MODEL_URL` di:
 
 ```
 .
+├── api/
+│   └── index.js        # Entry serverless Vercel (mengekspor Express app)
+├── lib/
+│   ├── app.js          # Factory Express app + REST API (dipakai bersama)
+│   ├── store.js        # Pemilih backend (Postgres bila ada DATABASE_URL)
+│   ├── store-postgres.js # Backend PostgreSQL
+│   └── store-json.js   # Backend file JSON (lokal)
 ├── server/
-│   ├── index.js        # Express server + REST API
-│   └── store.js        # Penyimpanan JSON (members & attendance)
+│   └── index.js        # Entry pengembangan lokal (npm start)
 ├── public/
 │   ├── index.html      # Beranda
 │   ├── register.html   # Registrasi wajah tim
@@ -89,7 +144,9 @@ mengubah konstanta `MODEL_URL` di:
 │       ├── register.js
 │       ├── attendance.js   # Logika inti: kenali wajah + angkat tangan
 │       └── dashboard.js
-└── data/               # Data tersimpan di sini (dibuat otomatis)
+├── vercel.json         # Konfigurasi routing Vercel
+├── .env.example        # Contoh konfigurasi DATABASE_URL
+└── data/               # Penyimpanan JSON lokal (dibuat otomatis)
 ```
 
 ## 🔌 REST API

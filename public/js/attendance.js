@@ -37,6 +37,15 @@
 
   const presentToday = new Set(); // memberId yang sudah hadir hari ini
 
+  // Tanggal lokal perangkat (YYYY-MM-DD). Dikirim ke server agar konsisten
+  // dengan zona waktu pengguna, bukan zona waktu server (Vercel = UTC).
+  function localDate() {
+    const d = new Date();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${d.getFullYear()}-${m}-${day}`;
+  }
+
   function setFace(text, state) {
     faceStatus.textContent = text;
     faceDot.className = `dot ${state || ''}`;
@@ -57,7 +66,7 @@
   }
 
   async function loadPresentToday() {
-    const { records } = await API.getAttendance();
+    const { records } = await API.getAttendance(localDate());
     presentToday.clear();
     records.forEach((r) => presentToday.add(r.memberId));
     renderPresent(records);
@@ -255,7 +264,7 @@
     if (presentToday.has(member.id)) return; // sudah hadir hari ini
 
     try {
-      const result = await API.recordAttendance(member.id, 'hand-raise');
+      const result = await API.recordAttendance(member.id, 'hand-raise', localDate());
       if (result.status === 'recorded') {
         presentToday.add(member.id);
         toast('Absensi tercatat ✓', `${member.name} hadir.`, 'success');
