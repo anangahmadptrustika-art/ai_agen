@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Registrasi Tim · Absensi AI Vision</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">👁️</span> Absensi AI Vision</div>
+    <nav class="nav">
+      <a href="/">Beranda</a>
+      <a href="/register.html">Registrasi</a>
+      <a href="/attendance.html">Absensi</a>
+      <a href="/dashboard.html">Dashboard</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>Registrasi Anggota Tim</h1>
+    <p class="subtitle">Hadapkan wajah anggota ke kamera, isi nama, lalu simpan. Ambil beberapa sampel agar pengenalan lebih akurat.</p>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <div class="video-wrap">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <div class="row mt">
+          <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Menyiapkan kamera…</span></span>
+          <div class="spacer"></div>
+          <button id="startCam" class="btn secondary">Aktifkan Kamera</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>Data Anggota</h3>
+        <label for="name">Nama lengkap</label>
+        <input type="text" id="name" placeholder="mis. Budi Santoso" />
+        <label for="role">Jabatan / divisi (opsional)</label>
+        <input type="text" id="role" placeholder="mis. Tim Marketing" />
+
+        <button id="capture" class="btn block mt" disabled>📸 Tangkap Wajah & Simpan</button>
+        <p class="muted mt" id="hint">Pastikan hanya ada satu wajah yang jelas di kamera.</p>
+
+        <hr style="border-color:var(--border);margin:18px 0" />
+        <div class="row">
+          <h3 style="margin:0">Anggota Terdaftar</h3>
+          <div class="spacer"></div>
+          <span id="count" class="badge role">0</span>
+        </div>
+        <div id="memberList" class="member-list">
+          <p class="muted">Belum ada anggota terdaftar.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/face.js"></script>
+  <script src="/js/register.js"></script>
+</body>
+</html>

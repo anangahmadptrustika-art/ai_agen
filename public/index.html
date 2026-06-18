@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Absensi AI Vision</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">👁️</span> Absensi AI Vision</div>
+    <nav class="nav">
+      <a href="/">Beranda</a>
+      <a href="/register.html">Registrasi</a>
+      <a href="/attendance.html">Absensi</a>
+      <a href="/dashboard.html">Dashboard</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>Selamat datang 👋</h1>
+    <p class="subtitle">
+      Sistem absensi berbasis AI Vision. Kamera mengenali wajah anggota tim,
+      lalu absensi tercatat otomatis saat anggota <strong>mengangkat tangan</strong>.
+    </p>
+
+    <div class="grid cols-3">
+      <a class="card feature" href="/register.html">
+        <div class="icon">🧑‍💼</div>
+        <h3>1. Registrasi Tim</h3>
+        <p>Daftarkan wajah setiap anggota tim. Cukup hadapkan wajah ke kamera dan simpan.</p>
+      </a>
+      <a class="card feature" href="/attendance.html">
+        <div class="icon">📸</div>
+        <h3>2. Mulai Absensi</h3>
+        <p>Buka kamera. Sistem mengenali wajah otomatis; angkat tangan untuk mencatat kehadiran.</p>
+      </a>
+      <a class="card feature" href="/dashboard.html">
+        <div class="icon">📊</div>
+        <h3>3. Lihat Rekap</h3>
+        <p>Pantau siapa saja yang sudah hadir hari ini beserta jam kehadirannya.</p>
+      </a>
+    </div>
+
+    <div class="card mt">
+      <h3>Cara kerja singkat</h3>
+      <ol class="muted">
+        <li><strong>Pengenalan wajah</strong> memakai <em>face-api.js</em> — menghitung "sidik jari" wajah (128 angka) untuk tiap orang.</li>
+        <li><strong>Deteksi angkat tangan</strong> memakai <em>MediaPipe Pose</em> — sistem cek apakah pergelangan tangan berada di atas bahu.</li>
+        <li>Saat wajah dikenali <em>dan</em> tangan terangkat, kehadiran langsung tercatat (maksimal 1× per orang per hari).</li>
+      </ol>
+      <p class="muted">
+        Semua pemrosesan AI berjalan di browser Anda. Data wajah disimpan lokal di server ini.
+      </p>
+    </div>
+  </main>
+
+  <script src="/js/common.js"></script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "name": "absensi-ai-vision",
+  "version": "1.0.0",
+  "description": "Sistem absensi berbasis AI Vision: pengenalan wajah + deteksi angkat tangan",
+  "main": "server/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js"
+  },
+  "keywords": [
+    "absensi",
+    "attendance",
+    "face-recognition",
+    "ai-vision",
+    "mediapipe",
+    "face-api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}

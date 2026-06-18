@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Absensi · Absensi AI Vision</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">👁️</span> Absensi AI Vision</div>
+    <nav class="nav">
+      <a href="/">Beranda</a>
+      <a href="/register.html">Registrasi</a>
+      <a href="/attendance.html">Absensi</a>
+      <a href="/dashboard.html">Dashboard</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>Absensi Live</h1>
+    <p class="subtitle">Hadapkan wajah ke kamera untuk dikenali, lalu <strong>angkat tangan</strong> untuk mencatat kehadiran.</p>
+
+    <div class="grid cols-2">
+      <div class="card">
+        <div class="video-wrap">
+          <video id="video" autoplay muted playsinline></video>
+          <canvas id="overlay"></canvas>
+        </div>
+        <div class="row mt">
+          <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Belum aktif</span></span>
+          <span class="status-pill"><span id="handDot" class="dot"></span> <span id="handStatus">Tangan: -</span></span>
+          <div class="spacer"></div>
+          <button id="startBtn" class="btn">▶ Mulai Absensi</button>
+          <button id="stopBtn" class="btn secondary hide">⏸ Berhenti</button>
+        </div>
+        <p class="muted mt" id="bootMsg"></p>
+      </div>
+
+      <div class="card">
+        <div class="row">
+          <h3 style="margin:0">Hadir Hari Ini</h3>
+          <div class="spacer"></div>
+          <span id="presentCount" class="badge present">0</span>
+        </div>
+        <p class="muted" id="todayLabel"></p>
+        <div id="presentList" class="member-list">
+          <p class="muted">Belum ada yang absen hari ini.</p>
+        </div>
+        <hr style="border-color:var(--border);margin:16px 0" />
+        <p class="muted" id="totalMembers">Anggota terdaftar: 0</p>
+        <p class="muted">Tip: daftarkan tim dulu di menu <a href="/register.html">Registrasi</a> bila daftar kosong.</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/js/face.js"></script>
+  <script src="/js/pose.js"></script>
+  <script src="/js/attendance.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard · Absensi AI Vision</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="logo">👁️</span> Absensi AI Vision</div>
+    <nav class="nav">
+      <a href="/">Beranda</a>
+      <a href="/register.html">Registrasi</a>
+      <a href="/attendance.html">Absensi</a>
+      <a href="/dashboard.html">Dashboard</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <h1>Dashboard Kehadiran</h1>
+    <p class="subtitle">Rekap kehadiran tim per tanggal.</p>
+
+    <div class="grid cols-3">
+      <div class="card stat"><div class="num" id="statPresent">0</div><div class="lbl">Hadir</div></div>
+      <div class="card stat"><div class="num" id="statTotal">0</div><div class="lbl">Total Anggota</div></div>
+      <div class="card stat"><div class="num" id="statAbsent">0</div><div class="lbl">Belum Hadir</div></div>
+    </div>
+
+    <div class="card mt">
+      <div class="row">
+        <label for="datePick" style="margin:0">Tanggal:</label>
+        <input type="date" id="datePick" style="width:auto" />
+        <div class="spacer"></div>
+        <button id="exportBtn" class="btn secondary">⬇ Export CSV</button>
+      </div>
+
+      <h3 class="mt">Sudah Hadir</h3>
+      <table>
+        <thead><tr><th>Nama</th><th>Jabatan</th><th>Jam Hadir</th><th>Metode</th></tr></thead>
+        <tbody id="presentRows"><tr><td colspan="4" class="muted">Memuat…</td></tr></tbody>
+      </table>
+
+      <h3 class="mt">Belum Hadir</h3>
+      <table>
+        <thead><tr><th>Nama</th><th>Jabatan</th><th>Status</th></tr></thead>
+        <tbody id="absentRows"><tr><td colspan="3" class="muted">Memuat…</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>
