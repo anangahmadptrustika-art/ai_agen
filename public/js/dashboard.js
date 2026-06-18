@@ -60,13 +60,18 @@
     for (const r of sorted) {
       const checkIn = r.checkIn || r.timestamp;
       const late = recLate(r);
+      // Jam pulang: jika sudah pulang tampilkan waktunya; jika belum & terlambat
+      // tampilkan jam pulang minimal akibat sangsi.
+      let pulang = '—';
+      if (r.checkOut) pulang = formatTime(r.checkOut);
+      else if (late > 0) pulang = `≥ ${allowedCheckoutLabel(late)} (sangsi)`;
       const tr = document.createElement('tr');
       tr.append(
         personCell(r.name),
         textCell(r.role || '-'),
         textCell(formatTime(checkIn)),
         late > 0 ? badgeCell(formatLate(late), 'absent') : textCell('—'),
-        textCell(r.checkOut ? formatTime(r.checkOut) : '—'),
+        textCell(pulang),
         badgeCell(late > 0 ? 'Terlambat' : 'Tepat waktu', late > 0 ? 'absent' : 'present')
       );
       presentRows.appendChild(tr);

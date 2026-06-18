@@ -28,6 +28,7 @@
   const flashName = document.getElementById('flashName');
   const flashTime = document.getElementById('flashTime');
   const flashLate = document.getElementById('flashLate');
+  const flashSanction = document.getElementById('flashSanction');
   const stage = document.getElementById('stage');
   const cameraSelect = document.getElementById('cameraSelect');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
@@ -349,7 +350,7 @@
   }
 
   // Tampilkan overlay besar "ABSEN BERHASIL" di atas kamera.
-  function showFlash({ title, name, time, lateMinutes = 0, type = 'success' }) {
+  function showFlash({ title, name, time, lateMinutes = 0, sanction = '', type = 'success' }) {
     flash.classList.toggle('out', type === 'out');
     flashIco.textContent = type === 'out' ? '🏁' : '✓';
     flashTitle.textContent = title;
@@ -363,6 +364,13 @@
       flashLate.classList.add('hide');
     }
 
+    if (sanction) {
+      flashSanction.textContent = sanction;
+      flashSanction.classList.remove('hide');
+    } else {
+      flashSanction.classList.add('hide');
+    }
+
     flash.classList.remove('hide');
     // restart animasi
     flash.style.animation = 'none';
@@ -370,7 +378,7 @@
     flash.style.animation = '';
 
     clearTimeout(flashTimer);
-    flashTimer = setTimeout(() => flash.classList.add('hide'), 3600);
+    flashTimer = setTimeout(() => flash.classList.add('hide'), sanction ? 5200 : 3600);
   }
 
   async function maybeRecord(member) {
@@ -379,17 +387,16 @@
     if (now - last < COOLDOWN_MS) return;
     recentlyRecorded.set(member.id, now);
 
-    // Tentukan fase berdasarkan waktu lokal: >= 17:00 dianggap absen pulang.
     const nowDate = new Date();
-    const phase = minutesOfDay(nowDate) >= WORK.END ? 'out' : 'in';
-    const lateMinutes = Math.max(0, minutesOfDay(nowDate) - WORK.START);
+    const nowMin = minutesOfDay(nowDate);
+    const lateMinutes = Math.max(0, nowMin - WORK.START);
 
     try {
       const result = await API.recordAttendance({
         memberId: member.id,
         date: localDate(),
         time: nowDate.toISOString(),
-        phase,
+        nowMinutes: nowMin,
         lateMinutes,
         method: 'hand-raise',
       });
@@ -398,11 +405,16 @@
         presentToday.add(member.id);
         const late = result.record.lateMinutes || 0;
         const checkIn = result.record.checkIn || result.record.timestamp;
+        // Bila terlambat: tampilkan sangsi waktu (jam pulang dimajukan).
+        const sanction = late > 0
+          ? `⛔ SANGSI ${sanctionHours(late)} JAM — baru boleh absen pulang jam ${allowedCheckoutLabel(late)}`
+          : '';
         showFlash({
           title: 'ABSEN BERHASIL',
           name: member.name,
           time: formatTime(checkIn),
           lateMinutes: late,
+          sanction,
           type: 'success',
         });
         await loadPresentToday();
@@ -416,7 +428,16 @@
         await loadPresentToday();
       } else if (result.status === 'already_in') {
         presentToday.add(member.id);
-        toast('Anda sudah absen', `${member.name}, belum waktunya pulang (jam pulang ${WORK.endLabel}).`, 'warn', 4200);
+        const late = result.record.lateMinutes || 0;
+        if (late > 0) {
+          toast(
+            '⛔ Kena sangsi waktu',
+            `${member.name} terlambat ${formatLate(late)} → sangsi ${sanctionHours(late)} jam. Baru bisa absen pulang jam ${allowedCheckoutLabel(late)}.`,
+            'error', 5200
+          );
+        } else {
+          toast('Anda sudah absen', `${member.name}, belum waktunya pulang (jam pulang ${WORK.endLabel}).`, 'warn', 4200);
+        }
       } else if (result.status === 'already_out') {
         toast('Sudah lengkap', `${member.name} sudah absen masuk & pulang hari ini.`, 'info');
       }

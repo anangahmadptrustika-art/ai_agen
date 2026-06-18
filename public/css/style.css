@@ -398,6 +398,16 @@ input:focus, select:focus {
   box-shadow: 0 8px 22px #dc262677;
   animation: lateShake .5s ease .1s;
 }
+.flash-sanction {
+  display: block; margin-top: 12px;
+  font-weight: 800; font-size: clamp(14px, 2.6vw, 18px);
+  color: #fff;
+  background: #7f1d1d;
+  border: 1px solid #fca5a5;
+  padding: 9px 18px; border-radius: 12px;
+  max-width: 90vw;
+}
+.video-wrap:fullscreen .flash-sanction { font-size: clamp(18px, 2.4vw, 30px); padding: 12px 26px; }
 @keyframes flashIn { from { opacity: 0; } }
 @keyframes flashPop { from { transform: scale(.82); opacity: 0; } }
 @keyframes lateShake {

@@ -74,6 +74,26 @@ function formatLate(mins) {
   return m ? `${h} jam ${m} menit` : `${h} jam`;
 }
 
+/* ----------------------- Sangsi keterlambatan ------------------------- */
+/* Tanpa toleransi. Sangsi (jam) = ceil(menit/60) + 1, ditambah ke 17:00.
+   Telat jam ke-1 -> sangsi 2 jam (pulang 19:00); jam ke-2 -> 3 jam (20:00). */
+function sanctionHours(lateMinutes) {
+  return lateMinutes > 0 ? Math.ceil(lateMinutes / 60) + 1 : 0;
+}
+function allowedCheckoutMinutes(lateMinutes) {
+  return WORK.END + sanctionHours(lateMinutes) * 60;
+}
+function minutesToHHMM(min) {
+  min = ((Math.round(min) % 1440) + 1440) % 1440;
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+/* Jam paling awal boleh absen pulang (mis. "19:00"). */
+function allowedCheckoutLabel(lateMinutes) {
+  return minutesToHHMM(allowedCheckoutMinutes(lateMinutes));
+}
+
 /* Toast notifikasi sederhana. */
 function toast(title, message = '', type = 'info', ms = 3200) {
   let area = document.querySelector('.toast-area');
