@@ -211,6 +211,9 @@ Dirancang untuk menyala terus di pintu masuk:
 > Untuk PC kios berspesifikasi rendah, ubah `detector` ke `'tiny'` di
 > `public/js/face.js` agar lebih ringan.
 
+📖 Panduan lengkap memasang PC kios Windows (setelan daya, Chrome `--kiosk`,
+auto-start saat boot, izin kamera): lihat **[KIOSK.md](KIOSK.md)**.
+
 ## 🔒 Privasi & Keamanan
 
 Aplikasi ini menyimpan *face descriptor* (vektor angka), **bukan foto wajah**.

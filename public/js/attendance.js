@@ -53,6 +53,7 @@
   const ACTIVE_INTERVAL_MS = 220;  // saat ada wajah: deteksi cepat
   const IDLE_INTERVAL_MS = 700;    // saat sepi: lambat (hemat CPU/panas untuk 24 jam)
   const IDLE_AFTER_MS = 4000;      // dianggap sepi bila tak ada wajah selama ini
+  const KIOSK_RELOAD_HOUR = 4;     // jam lokal untuk reload pemeliharaan harian (kios 24 jam)
 
   const presentToday = new Set(); // memberId yang sudah hadir hari ini
   const confirmCounts = new Map(); // memberId -> jumlah frame beruntun dikenali (anti salah-kenal)
@@ -97,6 +98,21 @@
     }
   }
 
+  // Reload pemeliharaan harian di jam sepi (kios 24 jam) untuk membersihkan
+  // memori jangka panjang. Aman: auto-resume akan menyalakan kamera lagi.
+  function maybeNightlyReload() {
+    if (!KIOSK || !running) return;
+    const now = new Date();
+    if (now.getHours() === KIOSK_RELOAD_HOUR && now.getMinutes() < 5) {
+      let last = null;
+      try { last = sessionStorage.getItem('kioskReloadDate'); } catch (_) {}
+      if (last !== localDate()) {
+        try { sessionStorage.setItem('kioskReloadDate', localDate()); } catch (_) {}
+        location.reload();
+      }
+    }
+  }
+
   async function init() {
     activeDate = localDate();
     updateTodayLabel();
@@ -104,15 +120,22 @@
     // Tampilkan jumlah anggota terdaftar (matcher dibangun saat tombol Mulai ditekan).
     const members = await API.getMembers();
     totalMembers.textContent = `Anggota terdaftar: ${members.length}`;
-    // Pantau pergantian hari (untuk kios yang menyala terus).
-    setInterval(checkDayRollover, 30000);
+    // Pantau pergantian hari + reload pemeliharaan (untuk kios yang menyala terus).
+    setInterval(() => { checkDayRollover(); maybeNightlyReload(); }, 30000);
     // Aktifkan tampilan kiosk bila dibuka via menu Kiosk (?kiosk=1).
     if (KIOSK) {
       document.body.classList.add('kiosk');
-      let wasRunning = false;
-      try { wasRunning = sessionStorage.getItem('kioskRunning') === '1'; } catch (_) {}
-      if (wasRunning) {
-        // Lanjut otomatis setelah reload/refresh (tanpa perlu tap lagi).
+      let auto = false;
+      try { auto = sessionStorage.getItem('kioskRunning') === '1'; } catch (_) {}
+      // Bila izin kamera sudah diberikan, mulai otomatis tanpa tap
+      // (mis. Chrome --kiosk saat boot). Jika tidak, tampilkan layar mulai.
+      if (!auto) {
+        try {
+          const st = await navigator.permissions.query({ name: 'camera' });
+          if (st && st.state === 'granted') auto = true;
+        } catch (_) { /* Permissions API tak didukung -> pakai layar mulai */ }
+      }
+      if (auto) {
         start().then(() => { if (!running) kioskStart.classList.remove('hide'); });
       } else {
         kioskStart.classList.remove('hide');
