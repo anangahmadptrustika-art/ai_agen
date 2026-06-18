@@ -22,6 +22,13 @@
   const presentCount = document.getElementById('presentCount');
   const totalMembers = document.getElementById('totalMembers');
   const todayLabel = document.getElementById('todayLabel');
+  const flash = document.getElementById('flash');
+  const flashIco = document.getElementById('flashIco');
+  const flashTitle = document.getElementById('flashTitle');
+  const flashName = document.getElementById('flashName');
+  const flashTime = document.getElementById('flashTime');
+  const flashLate = document.getElementById('flashLate');
+  let flashTimer = null;
 
   let stream = null;
   let running = false;
@@ -133,7 +140,7 @@
 
       bootMsg.textContent = 'Meminta izin kamera…';
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 },
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       video.srcObject = stream;
@@ -177,6 +184,8 @@
     stopBtn.classList.add('hide');
     setFace('Berhenti', '');
     setHand('Tangan: -', '');
+    clearTimeout(flashTimer);
+    flash.classList.add('hide');
     const ctx = overlay.getContext('2d');
     ctx && ctx.clearRect(0, 0, overlay.width, overlay.height);
   }
@@ -282,6 +291,31 @@
     ctx.fillText(text, box.x + padX, ty + 17);
   }
 
+  // Tampilkan overlay besar "ABSEN BERHASIL" di atas kamera.
+  function showFlash({ title, name, time, lateMinutes = 0, type = 'success' }) {
+    flash.classList.toggle('out', type === 'out');
+    flashIco.textContent = type === 'out' ? '🏁' : '✓';
+    flashTitle.textContent = title;
+    flashName.textContent = name;
+    flashTime.textContent = time ? `Pukul ${time}` : '';
+
+    if (lateMinutes > 0) {
+      flashLate.textContent = `⏰ TERLAMBAT ${formatLate(lateMinutes)}`;
+      flashLate.classList.remove('hide');
+    } else {
+      flashLate.classList.add('hide');
+    }
+
+    flash.classList.remove('hide');
+    // restart animasi
+    flash.style.animation = 'none';
+    void flash.offsetWidth;
+    flash.style.animation = '';
+
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(() => flash.classList.add('hide'), 3600);
+  }
+
   async function maybeRecord(member) {
     const now = Date.now();
     const last = recentlyRecorded.get(member.id) || 0;
@@ -306,14 +340,22 @@
       if (result.status === 'checkin') {
         presentToday.add(member.id);
         const late = result.record.lateMinutes || 0;
-        if (late > 0) {
-          toast('Absen masuk ✓ (Terlambat)', `${member.name} • terlambat ${formatLate(late)} dari ${WORK.startLabel}.`, 'warn', 4200);
-        } else {
-          toast('Absen masuk ✓', `${member.name} hadir tepat waktu. Selamat bekerja!`, 'success');
-        }
+        const checkIn = result.record.checkIn || result.record.timestamp;
+        showFlash({
+          title: 'ABSEN BERHASIL',
+          name: member.name,
+          time: formatTime(checkIn),
+          lateMinutes: late,
+          type: 'success',
+        });
         await loadPresentToday();
       } else if (result.status === 'checkout') {
-        toast('Absen pulang ✓', `${member.name} tercatat pulang. Sampai jumpa! 👋`, 'success');
+        showFlash({
+          title: 'ABSEN PULANG BERHASIL',
+          name: member.name,
+          time: formatTime(result.record.checkOut || nowDate.toISOString()),
+          type: 'out',
+        });
         await loadPresentToday();
       } else if (result.status === 'already_in') {
         presentToday.add(member.id);

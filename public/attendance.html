@@ -47,11 +47,20 @@
       <p class="subtitle">Hadapkan wajah ke kamera untuk dikenali, lalu <strong>angkat tangan</strong> untuk mencatat kehadiran.</p>
     </div>
 
-    <div class="grid cols-2">
+    <div class="grid cam-layout">
       <div class="card">
-        <div class="video-wrap">
-          <video id="video" autoplay muted playsinline></video>
+        <div class="video-wrap big">
+          <video id="video" autoplay muted playsinline disablepictureinpicture></video>
           <canvas id="overlay"></canvas>
+          <div id="flash" class="flash hide">
+            <div class="flash-card">
+              <div class="flash-ico" id="flashIco">✓</div>
+              <div class="flash-title" id="flashTitle">ABSEN BERHASIL</div>
+              <div class="flash-name" id="flashName"></div>
+              <div class="flash-time" id="flashTime"></div>
+              <div class="flash-late hide" id="flashLate"></div>
+            </div>
+          </div>
         </div>
         <div class="row mt">
           <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Belum aktif</span></span>

@@ -358,6 +358,53 @@ input:focus, select:focus {
     radial-gradient(circle at 50% 42%, #ffffff10, transparent 60%),
     repeating-linear-gradient(45deg, #ffffff05 0 12px, transparent 12px 24px);
 }
+/* Kamera versi besar (halaman absensi) */
+.video-wrap.big { aspect-ratio: 16 / 9; }
+
+/* Tata letak kamera besar di kiri, daftar hadir di kanan */
+.grid.cam-layout { grid-template-columns: minmax(0, 1.95fr) minmax(0, 1fr); align-items: start; }
+@media (max-width: 1000px) {
+  .grid.cam-layout { grid-template-columns: 1fr; }
+}
+
+/* ---------------------- Overlay "ABSEN BERHASIL" ----------------------- */
+.flash {
+  position: absolute; inset: 0; z-index: 6;
+  display: grid; place-items: center;
+  text-align: center;
+  background: color-mix(in srgb, #05122a 60%, transparent);
+  backdrop-filter: blur(3px);
+  animation: flashIn .22s ease;
+}
+.flash.hide { display: none !important; }
+.flash-card { color: #fff; padding: 20px; animation: flashPop .4s cubic-bezier(.2,1.25,.4,1); }
+.flash-ico {
+  width: clamp(64px, 12vw, 96px); height: clamp(64px, 12vw, 96px);
+  margin: 0 auto 16px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-size: clamp(34px, 7vw, 52px); font-weight: 800;
+  background: var(--success); color: #fff;
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--success) 25%, transparent), 0 14px 34px #0009;
+}
+.flash.out .flash-ico { background: var(--primary); box-shadow: 0 0 0 10px var(--primary-ring), 0 14px 34px #0009; }
+.flash-title { font-size: clamp(24px, 5.2vw, 36px); font-weight: 800; letter-spacing: .02em; line-height: 1.05; }
+.flash-name { font-size: clamp(17px, 3.4vw, 23px); font-weight: 700; margin-top: 8px; }
+.flash-time { font-size: 15px; opacity: .9; margin-top: 3px; }
+.flash-late {
+  display: inline-block; margin-top: 16px;
+  font-weight: 800; font-size: clamp(15px, 3vw, 19px); color: #fff;
+  background: var(--danger);
+  padding: 9px 20px; border-radius: var(--radius-pill);
+  box-shadow: 0 8px 22px #dc262677;
+  animation: lateShake .5s ease .1s;
+}
+@keyframes flashIn { from { opacity: 0; } }
+@keyframes flashPop { from { transform: scale(.82); opacity: 0; } }
+@keyframes lateShake {
+  0%,100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); } 40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); } 80% { transform: translateX(3px); }
+}
 
 /* --------------------------- Status pills ------------------------------ */
 .status-pill {
