@@ -34,16 +34,45 @@ const API = {
     const r = await fetch(`/api/attendance${q}`);
     return r.json();
   },
-  async recordAttendance(memberId, method, date) {
+  async recordAttendance(payload) {
+    // payload: { memberId, date, time, phase, lateMinutes, method }
     const r = await fetch('/api/attendance', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ memberId, method, date }),
+      body: JSON.stringify(payload),
     });
     if (!r.ok) throw new Error('Gagal mencatat absensi');
     return r.json();
   },
 };
+
+/* --------------------- Konfigurasi jam kerja -------------------------- */
+/* Ubah di sini bila jam kantor berbeda. Format: menit sejak tengah malam. */
+const WORK = {
+  START: 8 * 60,   // 08:00 — jam masuk
+  END: 17 * 60,    // 17:00 — jam pulang
+  startLabel: '08:00',
+  endLabel: '17:00',
+};
+
+/* Menit sejak tengah malam dari sebuah Date (waktu lokal perangkat). */
+function minutesOfDay(d) {
+  return d.getHours() * 60 + d.getMinutes();
+}
+/* Keterlambatan (menit) dari jam masuk, berdasar waktu check-in lokal. */
+function lateMinutesFrom(iso) {
+  const m = minutesOfDay(new Date(iso));
+  return Math.max(0, m - WORK.START);
+}
+/* Format durasi menit jadi teks ramah: "45 menit" / "1 jam 15 menit". */
+function formatLate(mins) {
+  mins = Math.round(mins);
+  if (mins <= 0) return 'Tepat waktu';
+  if (mins < 60) return `${mins} menit`;
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return m ? `${h} jam ${m} menit` : `${h} jam`;
+}
 
 /* Toast notifikasi sederhana. */
 function toast(title, message = '', type = 'info', ms = 3200) {

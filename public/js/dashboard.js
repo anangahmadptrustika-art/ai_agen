@@ -5,11 +5,16 @@
 (() => {
   const datePick = document.getElementById('datePick');
   const presentRows = document.getElementById('presentRows');
+  const lateRows = document.getElementById('lateRows');
   const absentRows = document.getElementById('absentRows');
   const statPresent = document.getElementById('statPresent');
+  const statLate = document.getElementById('statLate');
   const statTotal = document.getElementById('statTotal');
   const statAbsent = document.getElementById('statAbsent');
   const exportBtn = document.getElementById('exportBtn');
+
+  // Keterlambatan (menit) dari sebuah record, dihitung dari jam masuk lokal.
+  const recLate = (r) => lateMinutesFrom(r.checkIn || r.timestamp);
 
   let currentRecords = [];
   let currentDate = '';
@@ -31,32 +36,60 @@
 
     const presentIds = new Set(currentRecords.map((r) => r.memberId));
     const absent = members.filter((m) => !presentIds.has(m.id));
+    const lateRecords = currentRecords.filter((r) => recLate(r) > 0);
 
     statPresent.textContent = currentRecords.length;
     statTotal.textContent = members.length;
     statAbsent.textContent = absent.length;
+    statLate.textContent = lateRecords.length;
 
     renderPresent(currentRecords);
+    renderLate(lateRecords);
     renderAbsent(absent);
   }
 
   function renderPresent(records) {
     if (records.length === 0) {
-      presentRows.innerHTML = '<tr><td colspan="4" class="muted">Belum ada kehadiran pada tanggal ini.</td></tr>';
+      presentRows.innerHTML = '<tr><td colspan="6" class="muted">Belum ada kehadiran pada tanggal ini.</td></tr>';
       return;
     }
-    const sorted = [...records].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+    const sorted = [...records].sort((a, b) =>
+      (a.checkIn || a.timestamp).localeCompare(b.checkIn || b.timestamp)
+    );
     presentRows.innerHTML = '';
     for (const r of sorted) {
+      const checkIn = r.checkIn || r.timestamp;
+      const late = recLate(r);
       const tr = document.createElement('tr');
-      const method = r.method === 'hand-raise' ? 'Angkat tangan' : r.method;
       tr.append(
         personCell(r.name),
         textCell(r.role || '-'),
-        textCell(formatTime(r.timestamp)),
-        badgeCell(method, 'role')
+        textCell(formatTime(checkIn)),
+        late > 0 ? badgeCell(formatLate(late), 'absent') : textCell('—'),
+        textCell(r.checkOut ? formatTime(r.checkOut) : '—'),
+        badgeCell(late > 0 ? 'Terlambat' : 'Tepat waktu', late > 0 ? 'absent' : 'present')
       );
       presentRows.appendChild(tr);
+    }
+  }
+
+  function renderLate(records) {
+    if (records.length === 0) {
+      lateRows.innerHTML = '<tr><td colspan="4" class="muted">Tidak ada yang terlambat 🎉</td></tr>';
+      return;
+    }
+    // Paling terlambat di atas.
+    const sorted = [...records].sort((a, b) => recLate(b) - recLate(a));
+    lateRows.innerHTML = '';
+    for (const r of sorted) {
+      const tr = document.createElement('tr');
+      tr.append(
+        personCell(r.name),
+        textCell(r.role || '-'),
+        textCell(formatTime(r.checkIn || r.timestamp)),
+        badgeCell(formatLate(recLate(r)), 'absent')
+      );
+      lateRows.appendChild(tr);
     }
   }
 
@@ -104,10 +137,21 @@
       toast('Tidak ada data', 'Belum ada kehadiran untuk diekspor.', 'warn');
       return;
     }
-    const header = ['Nama', 'Jabatan', 'Tanggal', 'Jam', 'Metode'];
+    const header = ['Nama', 'Jabatan', 'Tanggal', 'Jam Masuk', 'Terlambat (menit)', 'Jam Pulang', 'Status', 'Metode'];
     const lines = [header.join(',')];
     for (const r of currentRecords) {
-      const cells = [r.name, r.role || '', r.date, formatTime(r.timestamp), r.method];
+      const checkIn = r.checkIn || r.timestamp;
+      const late = recLate(r);
+      const cells = [
+        r.name,
+        r.role || '',
+        r.date,
+        formatTime(checkIn),
+        late,
+        r.checkOut ? formatTime(r.checkOut) : '',
+        late > 0 ? 'Terlambat' : 'Tepat waktu',
+        r.method,
+      ];
       lines.push(cells.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','));
     }
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });

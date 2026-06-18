@@ -44,12 +44,13 @@
     <div class="page-head">
       <span class="eyebrow">📊 Langkah 3</span>
       <h1>Dashboard Kehadiran</h1>
-      <p class="subtitle">Rekap kehadiran tim per tanggal — siapa yang sudah hadir, siapa yang belum.</p>
+      <p class="subtitle">Rekap kehadiran tim per tanggal. <strong>Jam masuk 08:00</strong> · <strong>Jam pulang 17:00</strong> — kehadiran lewat 08:00 dihitung terlambat.</p>
     </div>
 
     <div class="grid cols-3">
-      <div class="card stat"><div class="stat-ico green">✅</div><div><div class="num" id="statPresent">0</div><div class="lbl">Hadir</div></div></div>
       <div class="card stat"><div class="stat-ico blue">👥</div><div><div class="num" id="statTotal">0</div><div class="lbl">Total Anggota</div></div></div>
+      <div class="card stat"><div class="stat-ico green">✅</div><div><div class="num" id="statPresent">0</div><div class="lbl">Hadir</div></div></div>
+      <div class="card stat"><div class="stat-ico amber">⏰</div><div><div class="num" id="statLate">0</div><div class="lbl">Terlambat</div></div></div>
       <div class="card stat"><div class="stat-ico red">⏳</div><div><div class="num" id="statAbsent">0</div><div class="lbl">Belum Hadir</div></div></div>
     </div>
 
@@ -64,12 +65,20 @@
       <div class="card-head"><h3 style="margin:0">Sudah Hadir</h3></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nama</th><th>Jabatan</th><th>Jam Hadir</th><th>Metode</th></tr></thead>
-          <tbody id="presentRows"><tr><td colspan="4" class="muted">Memuat…</td></tr></tbody>
+          <thead><tr><th>Nama</th><th>Jabatan</th><th>Jam Masuk</th><th>Terlambat</th><th>Jam Pulang</th><th>Status</th></tr></thead>
+          <tbody id="presentRows"><tr><td colspan="6" class="muted">Memuat…</td></tr></tbody>
         </table>
       </div>
 
-      <div class="card-head" style="margin-top:22px"><h3 style="margin:0">Belum Hadir</h3></div>
+      <div class="card-head" style="margin-top:24px"><h3 style="margin:0">⏰ Daftar Terlambat</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nama</th><th>Jabatan</th><th>Jam Masuk</th><th>Keterlambatan (dari 08:00)</th></tr></thead>
+          <tbody id="lateRows"><tr><td colspan="4" class="muted">Memuat…</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="card-head" style="margin-top:24px"><h3 style="margin:0">Belum Hadir</h3></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Nama</th><th>Jabatan</th><th>Status</th></tr></thead>

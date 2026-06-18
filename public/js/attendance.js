@@ -79,9 +79,14 @@
       return;
     }
     // Terbaru di atas.
-    const sorted = [...records].sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+    const sorted = [...records].sort((a, b) =>
+      (b.checkIn || b.timestamp).localeCompare(a.checkIn || a.timestamp)
+    );
     presentList.innerHTML = '';
     for (const r of sorted) {
+      const checkIn = r.checkIn || r.timestamp;
+      const late = lateMinutesFrom(checkIn);
+
       const row = document.createElement('div');
       row.className = 'member-row';
 
@@ -95,15 +100,25 @@
       name.textContent = r.name;
       const role = document.createElement('span');
       role.className = 'role';
-      role.textContent = r.role || 'Hadir';
+      role.textContent = late > 0 ? `Terlambat ${formatLate(late)}` : (r.role || 'Tepat waktu');
       meta.append(name, role);
       person.appendChild(meta);
 
-      const badge = document.createElement('span');
-      badge.className = 'badge present';
-      badge.textContent = `✔ ${formatTime(r.timestamp)}`;
+      const badges = document.createElement('div');
+      badges.className = 'row';
+      badges.style.gap = '6px';
+      const inBadge = document.createElement('span');
+      inBadge.className = 'badge ' + (late > 0 ? 'absent' : 'present');
+      inBadge.textContent = `${late > 0 ? '⏰' : '✔'} ${formatTime(checkIn)}`;
+      badges.appendChild(inBadge);
+      if (r.checkOut) {
+        const outBadge = document.createElement('span');
+        outBadge.className = 'badge';
+        outBadge.textContent = `🏁 ${formatTime(r.checkOut)}`;
+        badges.appendChild(outBadge);
+      }
 
-      row.append(person, badge);
+      row.append(person, badges);
       presentList.appendChild(row);
     }
   }
@@ -273,16 +288,38 @@
     if (now - last < COOLDOWN_MS) return;
     recentlyRecorded.set(member.id, now);
 
-    if (presentToday.has(member.id)) return; // sudah hadir hari ini
+    // Tentukan fase berdasarkan waktu lokal: >= 17:00 dianggap absen pulang.
+    const nowDate = new Date();
+    const phase = minutesOfDay(nowDate) >= WORK.END ? 'out' : 'in';
+    const lateMinutes = Math.max(0, minutesOfDay(nowDate) - WORK.START);
 
     try {
-      const result = await API.recordAttendance(member.id, 'hand-raise', localDate());
-      if (result.status === 'recorded') {
+      const result = await API.recordAttendance({
+        memberId: member.id,
+        date: localDate(),
+        time: nowDate.toISOString(),
+        phase,
+        lateMinutes,
+        method: 'hand-raise',
+      });
+
+      if (result.status === 'checkin') {
         presentToday.add(member.id);
-        toast('Absensi tercatat ✓', `${member.name} hadir.`, 'success');
+        const late = result.record.lateMinutes || 0;
+        if (late > 0) {
+          toast('Absen masuk ✓ (Terlambat)', `${member.name} • terlambat ${formatLate(late)} dari ${WORK.startLabel}.`, 'warn', 4200);
+        } else {
+          toast('Absen masuk ✓', `${member.name} hadir tepat waktu. Selamat bekerja!`, 'success');
+        }
         await loadPresentToday();
-      } else if (result.status === 'already') {
+      } else if (result.status === 'checkout') {
+        toast('Absen pulang ✓', `${member.name} tercatat pulang. Sampai jumpa! 👋`, 'success');
+        await loadPresentToday();
+      } else if (result.status === 'already_in') {
         presentToday.add(member.id);
+        toast('Anda sudah absen', `${member.name}, belum waktunya pulang (jam pulang ${WORK.endLabel}).`, 'warn', 4200);
+      } else if (result.status === 'already_out') {
+        toast('Sudah lengkap', `${member.name} sudah absen masuk & pulang hari ini.`, 'info');
       }
     } catch (err) {
       toast('Gagal mencatat', err.message, 'error');

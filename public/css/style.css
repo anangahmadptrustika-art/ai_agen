@@ -457,6 +457,7 @@ tbody tr:hover { background: var(--surface-hover); }
 }
 .stat .stat-ico.blue { background: var(--primary-soft); }
 .stat .stat-ico.green { background: var(--success-soft); }
+.stat .stat-ico.amber { background: var(--warn-soft); }
 .stat .stat-ico.red { background: var(--danger-soft); }
 .stat .num { font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -0.02em; }
 .stat .lbl { color: var(--muted); font-size: 13px; margin-top: 4px; }
