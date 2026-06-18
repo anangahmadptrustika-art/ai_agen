@@ -49,9 +49,22 @@
 
     <div class="grid cam-layout">
       <div class="card">
-        <div class="video-wrap big">
+        <div class="video-wrap big" id="stage">
           <video id="video" autoplay muted playsinline disablepictureinpicture></video>
           <canvas id="overlay"></canvas>
+
+          <div class="cam-hud">
+            <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Belum aktif</span></span>
+            <span class="status-pill"><span id="handDot" class="dot"></span> <span id="handStatus">Tangan: –</span></span>
+          </div>
+
+          <button id="fsToggle" class="cam-btn" type="button" title="Layar penuh" aria-label="Layar penuh">
+            <svg class="fs-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            <svg class="fs-compress" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3a1 1 0 0 0 1-1V4M20 8h-3a1 1 0 0 1-1-1V4M4 16h3a1 1 0 0 1 1 1v3M20 16h-3a1 1 0 0 0-1 1v3"/></svg>
+          </button>
+
+          <div class="cam-hint">Hadapkan wajah & <strong>angkat tangan</strong> untuk absen ✋</div>
+
           <div id="flash" class="flash hide">
             <div class="flash-card">
               <div class="flash-ico" id="flashIco">✓</div>
@@ -62,10 +75,13 @@
             </div>
           </div>
         </div>
+
         <div class="row mt">
-          <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Belum aktif</span></span>
-          <span class="status-pill"><span id="handDot" class="dot"></span> <span id="handStatus">Tangan: –</span></span>
+          <select id="cameraSelect" class="cam-select" title="Pilih kamera" disabled>
+            <option>📷 Kamera default</option>
+          </select>
           <div class="spacer"></div>
+          <button id="fullscreenBtn" class="btn secondary" type="button">⛶ Layar Penuh</button>
           <button id="startBtn" class="btn">▶ Mulai Absensi</button>
           <button id="stopBtn" class="btn secondary hide">⏸ Berhenti</button>
         </div>

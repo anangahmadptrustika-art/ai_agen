@@ -28,7 +28,12 @@
   const flashName = document.getElementById('flashName');
   const flashTime = document.getElementById('flashTime');
   const flashLate = document.getElementById('flashLate');
+  const stage = document.getElementById('stage');
+  const cameraSelect = document.getElementById('cameraSelect');
+  const fullscreenBtn = document.getElementById('fullscreenBtn');
+  const fsToggle = document.getElementById('fsToggle');
   let flashTimer = null;
+  let currentDeviceId = (() => { try { return localStorage.getItem('cameraId'); } catch (_) { return null; } })();
 
   let stream = null;
   let running = false;
@@ -130,6 +135,63 @@
     }
   }
 
+  // Buka kamera (deviceId opsional untuk memilih webcam tertentu/eksternal).
+  async function openCamera(deviceId) {
+    if (stream) stream.getTracks().forEach((t) => t.stop());
+    const videoConstraints = { width: { ideal: 1280 }, height: { ideal: 720 } };
+    if (deviceId) videoConstraints.deviceId = { exact: deviceId };
+    else videoConstraints.facingMode = 'user';
+
+    stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraints, audio: false });
+    video.srcObject = stream;
+    await video.play();
+    overlay.width = video.videoWidth;
+    overlay.height = video.videoHeight;
+
+    // Simpan deviceId aktual yang dipakai agar bisa diingat untuk kios.
+    const track = stream.getVideoTracks()[0];
+    const settings = track && track.getSettings ? track.getSettings() : {};
+    if (settings.deviceId) {
+      currentDeviceId = settings.deviceId;
+      try { localStorage.setItem('cameraId', currentDeviceId); } catch (_) {}
+    }
+  }
+
+  // Isi dropdown daftar kamera (label muncul setelah izin diberikan).
+  async function populateCameras() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cams = devices.filter((d) => d.kind === 'videoinput');
+      if (cams.length === 0) return;
+      cameraSelect.innerHTML = '';
+      cams.forEach((c, i) => {
+        const opt = document.createElement('option');
+        opt.value = c.deviceId;
+        opt.textContent = c.label || `Kamera ${i + 1}`;
+        cameraSelect.appendChild(opt);
+      });
+      if (currentDeviceId) cameraSelect.value = currentDeviceId;
+      cameraSelect.disabled = false;
+    } catch (err) {
+      console.warn('enumerateDevices gagal:', err.message);
+    }
+  }
+
+  // Ganti kamera saat sedang berjalan.
+  async function switchCamera(deviceId) {
+    currentDeviceId = deviceId;
+    try { localStorage.setItem('cameraId', deviceId); } catch (_) {}
+    if (!running) return;
+    try {
+      bootMsg.textContent = 'Mengganti kamera…';
+      await openCamera(deviceId);
+      bootMsg.textContent = '';
+      toast('Kamera diganti', 'Sumber kamera berhasil diubah.', 'success', 2500);
+    } catch (err) {
+      toast('Gagal ganti kamera', err.message, 'error', 4000);
+    }
+  }
+
   async function start() {
     startBtn.disabled = true;
     try {
@@ -139,15 +201,10 @@
       await POSE.load((m) => (bootMsg.textContent = m));
 
       bootMsg.textContent = 'Meminta izin kamera…';
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false,
-      });
-      video.srcObject = stream;
-      await video.play();
-
-      overlay.width = video.videoWidth;
-      overlay.height = video.videoHeight;
+      await openCamera(currentDeviceId);
+      await populateCameras();
+      navigator.mediaDevices.addEventListener &&
+        navigator.mediaDevices.addEventListener('devicechange', populateCameras);
 
       const members = await API.getMembers();
       const built = FACE.buildMatcher(members);
@@ -368,8 +425,42 @@
     }
   }
 
+  /* --------------------------- Layar penuh (kiosk) -------------------------- */
+  function isFullscreen() {
+    return document.fullscreenElement || document.webkitFullscreenElement;
+  }
+  function toggleFullscreen() {
+    if (!isFullscreen()) {
+      const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+      if (req) req.call(stage).catch((e) => toast('Layar penuh gagal', e.message, 'error'));
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document);
+    }
+  }
+  function updateFsUI() {
+    const fs = Boolean(isFullscreen());
+    document.body.classList.toggle('is-fullscreen', fs);
+    if (fullscreenBtn) fullscreenBtn.textContent = fs ? '🡼 Keluar Layar Penuh' : '⛶ Layar Penuh';
+  }
+
+  /* ------------------------------ Wiring ------------------------------ */
   startBtn.addEventListener('click', start);
   stopBtn.addEventListener('click', stop);
+  fullscreenBtn.addEventListener('click', toggleFullscreen);
+  fsToggle.addEventListener('click', toggleFullscreen);
+  document.addEventListener('fullscreenchange', updateFsUI);
+  document.addEventListener('webkitfullscreenchange', updateFsUI);
+
+  cameraSelect.addEventListener('change', () => {
+    const id = cameraSelect.value;
+    if (running) switchCamera(id);
+    else {
+      currentDeviceId = id;
+      try { localStorage.setItem('cameraId', id); } catch (_) {}
+    }
+  });
+
   window.addEventListener('beforeunload', () => stream && stream.getTracks().forEach((t) => t.stop()));
 
   init();

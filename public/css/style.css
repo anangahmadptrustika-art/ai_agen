@@ -406,6 +406,60 @@ input:focus, select:focus {
   60% { transform: translateX(-3px); } 80% { transform: translateX(3px); }
 }
 
+/* ---------------------- HUD & kontrol di kamera ------------------------ */
+.cam-hud {
+  position: absolute; left: 12px; bottom: 12px; z-index: 4;
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.cam-hud .status-pill {
+  background: #0b1220cc; color: #e9eef7; border-color: #ffffff2b;
+  backdrop-filter: blur(6px);
+}
+.cam-hint {
+  position: absolute; top: 12px; left: 12px; z-index: 4;
+  padding: 7px 13px; border-radius: var(--radius-pill);
+  background: #0b1220bf; color: #e9eef7; border: 1px solid #ffffff24;
+  font-size: 13px; font-weight: 600; backdrop-filter: blur(6px);
+  max-width: calc(100% - 80px);
+}
+.cam-btn {
+  position: absolute; top: 12px; right: 12px; z-index: 8;
+  width: 42px; height: 42px; border-radius: 11px;
+  display: grid; place-items: center;
+  background: #0b1220c4; color: #fff; border: 1px solid #ffffff30;
+  cursor: pointer; backdrop-filter: blur(6px);
+  transition: background-color .15s ease, transform .15s ease;
+}
+.cam-btn:hover { background: #0b1220ec; transform: translateY(-1px); }
+.cam-btn svg { width: 20px; height: 20px; }
+.cam-btn .fs-compress { display: none; }
+
+.cam-select { width: auto; max-width: 240px; padding: 9px 12px; font-size: 14px; }
+
+/* ----------------------- Mode layar penuh (kiosk) ---------------------- */
+.video-wrap:fullscreen,
+.video-wrap:-webkit-full-screen {
+  width: 100vw; height: 100vh; aspect-ratio: auto; border: 0; border-radius: 0; background: #000;
+}
+.video-wrap:fullscreen .cam-btn .fs-expand,
+.video-wrap:-webkit-full-screen .cam-btn .fs-expand { display: none; }
+.video-wrap:fullscreen .cam-btn .fs-compress,
+.video-wrap:-webkit-full-screen .cam-btn .fs-compress { display: block; }
+.video-wrap:fullscreen .cam-btn,
+.video-wrap:-webkit-full-screen .cam-btn { width: 54px; height: 54px; top: 22px; right: 22px; }
+.video-wrap:fullscreen .cam-btn svg { width: 28px; height: 28px; }
+.video-wrap:fullscreen .cam-hud,
+.video-wrap:-webkit-full-screen .cam-hud { left: 22px; bottom: 22px; }
+.video-wrap:fullscreen .cam-hud .status-pill,
+.video-wrap:fullscreen .cam-hint { font-size: 17px; padding: 10px 16px; }
+.video-wrap:fullscreen .cam-hint { top: 22px; left: 22px; }
+/* Overlay sukses jadi besar untuk dibaca dari jarak jauh */
+.video-wrap:fullscreen .flash-ico { width: clamp(110px, 11vw, 170px); height: clamp(110px, 11vw, 170px); font-size: clamp(60px, 7vw, 96px); }
+.video-wrap:fullscreen .flash-title { font-size: clamp(40px, 7vw, 92px); }
+.video-wrap:fullscreen .flash-name { font-size: clamp(24px, 3.6vw, 48px); }
+.video-wrap:fullscreen .flash-time { font-size: clamp(16px, 1.8vw, 26px); }
+.video-wrap:fullscreen .flash-late { font-size: clamp(20px, 2.8vw, 36px); padding: 12px 28px; }
+
 /* --------------------------- Status pills ------------------------------ */
 .status-pill {
   display: inline-flex;
