@@ -50,9 +50,16 @@
   // Cooldown agar absensi yang baru dicatat tidak dipicu berulang.
   const recentlyRecorded = new Map(); // memberId -> timestamp
   const COOLDOWN_MS = 10000;
-  const DETECT_INTERVAL_MS = 250; // jeda antar siklus deteksi berat
+  const ACTIVE_INTERVAL_MS = 220;  // saat ada wajah: deteksi cepat
+  const IDLE_INTERVAL_MS = 700;    // saat sepi: lambat (hemat CPU/panas untuk 24 jam)
+  const IDLE_AFTER_MS = 4000;      // dianggap sepi bila tak ada wajah selama ini
 
   const presentToday = new Set(); // memberId yang sudah hadir hari ini
+  const confirmCounts = new Map(); // memberId -> jumlah frame beruntun dikenali (anti salah-kenal)
+  let lastFaceSeenTs = 0;          // kapan terakhir ada wajah (untuk cadence adaptif)
+  let wakeLock = null;             // Screen Wake Lock (cegah layar tidur)
+  let recovering = false;          // sedang memulihkan kamera?
+  let lastFrameOkTs = 0;           // watchdog: kapan frame video terakhir valid
 
   // Tanggal lokal perangkat (YYYY-MM-DD). Dikirim ke server agar konsisten
   // dengan zona waktu pengguna, bukan zona waktu server (Vercel = UTC).
@@ -102,7 +109,14 @@
     // Aktifkan tampilan kiosk bila dibuka via menu Kiosk (?kiosk=1).
     if (KIOSK) {
       document.body.classList.add('kiosk');
-      kioskStart.classList.remove('hide');
+      let wasRunning = false;
+      try { wasRunning = sessionStorage.getItem('kioskRunning') === '1'; } catch (_) {}
+      if (wasRunning) {
+        // Lanjut otomatis setelah reload/refresh (tanpa perlu tap lagi).
+        start().then(() => { if (!running) kioskStart.classList.remove('hide'); });
+      } else {
+        kioskStart.classList.remove('hide');
+      }
     }
   }
 
@@ -176,6 +190,7 @@
     await video.play();
     overlay.width = video.videoWidth;
     overlay.height = video.videoHeight;
+    lastFrameOkTs = performance.now();
 
     // Simpan deviceId aktual yang dipakai agar bisa diingat untuk kios.
     const track = stream.getVideoTracks()[0];
@@ -184,6 +199,38 @@
       currentDeviceId = settings.deviceId;
       try { localStorage.setItem('cameraId', currentDeviceId); } catch (_) {}
     }
+    // 24/7: bila kamera (mis. webcam eksternal) terputus, pulihkan otomatis.
+    if (track) track.addEventListener('ended', () => { if (running) recoverCamera(); });
+  }
+
+  // Pulihkan kamera yang terputus (webcam dicabut, driver hiccup, dll.).
+  async function recoverCamera() {
+    if (recovering || !running) return;
+    recovering = true;
+    setFace('Kamera terputus — menyambungkan ulang…', 'off');
+    let delay = 1500;
+    while (running) {
+      try {
+        await openCamera(currentDeviceId);
+        setFace('Kamera tersambung kembali', 'on');
+        recovering = false;
+        return;
+      } catch (err) {
+        await new Promise((r) => setTimeout(r, delay));
+        delay = Math.min(delay * 2, 15000); // backoff sampai 15 dtk
+      }
+    }
+    recovering = false;
+  }
+
+  // Cegah layar tidur saat kios menyala 24 jam.
+  async function requestWakeLock() {
+    try {
+      if ('wakeLock' in navigator) {
+        wakeLock = await navigator.wakeLock.request('screen');
+        wakeLock.addEventListener && wakeLock.addEventListener('release', () => { wakeLock = null; });
+      }
+    } catch (_) { /* diabaikan bila tak didukung */ }
   }
 
   // Isi dropdown daftar kamera (label muncul setelah izin diberikan).
@@ -250,6 +297,8 @@
       stopBtn.classList.remove('hide');
       bootMsg.textContent = '';
       setFace('Mendeteksi…', 'on');
+      requestWakeLock();
+      try { sessionStorage.setItem('kioskRunning', KIOSK ? '1' : '0'); } catch (_) {}
       tick();
     } catch (err) {
       console.error(err);
@@ -265,6 +314,8 @@
     cancelAnimationFrame(rafId);
     if (stream) stream.getTracks().forEach((t) => t.stop());
     stream = null;
+    if (wakeLock) { try { wakeLock.release(); } catch (_) {} wakeLock = null; }
+    try { sessionStorage.setItem('kioskRunning', '0'); } catch (_) {}
     startBtn.classList.remove('hide');
     startBtn.disabled = false;
     stopBtn.classList.add('hide');
@@ -272,6 +323,7 @@
     setHand('Tangan: -', '');
     clearTimeout(flashTimer);
     flash.classList.add('hide');
+    confirmCounts.clear();
     const ctx = overlay.getContext('2d');
     ctx && ctx.clearRect(0, 0, overlay.width, overlay.height);
   }
@@ -280,9 +332,18 @@
     if (!running) return;
 
     const now = performance.now();
-    if (now - lastDetectTs >= DETECT_INTERVAL_MS && video.videoWidth) {
+    // Cadence adaptif: cepat saat ada wajah, lambat saat sepi (hemat untuk 24 jam).
+    const interval = now - lastFaceSeenTs < IDLE_AFTER_MS ? ACTIVE_INTERVAL_MS : IDLE_INTERVAL_MS;
+
+    if (now - lastDetectTs >= interval) {
       lastDetectTs = now;
-      await processFrame(now);
+      if (video.videoWidth && video.readyState >= 2) {
+        lastFrameOkTs = now;
+        await processFrame(now);
+      } else if (!recovering && now - lastFrameOkTs > 5000) {
+        // Watchdog: video macet/kosong > 5 dtk -> pulihkan kamera.
+        recoverCamera();
+      }
     }
     rafId = requestAnimationFrame(tick);
   }
@@ -303,8 +364,14 @@
     const W = overlay.width;
     const H = overlay.height;
 
+    if (faces.length > 0) lastFaceSeenTs = timestampMs;
+
     const anyHandRaised = people.some((p) => p.handRaised);
     setHand(anyHandRaised ? 'Tangan: TERANGKAT ✋' : 'Tangan: turun', anyHandRaised ? 'on' : '');
+
+    const minFaceW = W * (FACE.CONFIG.minFaceRatio || 0.12);
+    const minConsecutive = FACE.CONFIG.minConsecutive || 2;
+    const seenThisFrame = new Set();
 
     // Identifikasi tiap wajah.
     const recognized = [];
@@ -314,7 +381,10 @@
       let member = null;
       let color = '#f59e0b';
 
-      if (matcher) {
+      // Gerbang ukuran: wajah terlalu jauh/kecil -> descriptor tidak andal.
+      const tooFar = box.width < minFaceW;
+
+      if (matcher && !tooFar) {
         const best = matcher.findBestMatch(f.descriptor);
         if (best.label !== 'unknown') {
           member = labelToMember[best.label];
@@ -325,17 +395,33 @@
         }
       }
 
-      // Cek apakah ada tangan terangkat yang "milik" wajah ini.
+      // Konfirmasi multi-frame: hitung berapa frame beruntun identitas ini dikenali.
+      let confirmed = false;
+      if (member) {
+        seenThisFrame.add(member.id);
+        const c = (confirmCounts.get(member.id) || 0) + 1;
+        confirmCounts.set(member.id, c);
+        confirmed = c >= minConsecutive;
+      }
+
       const faceCenterX = (box.x + box.width / 2) / W;
       const handForThisFace = isHandRaisedNear(people, faceCenterX);
 
+      let drawLabel = label;
+      if (tooFar) drawLabel = 'Mendekat ke kamera';
+      else if (member && !confirmed) drawLabel = `${label}…`;
       recognized.push({ box, label, member, handRaised: handForThisFace });
-      drawFace(ctx, box, label, color, handForThisFace);
+      drawFace(ctx, box, drawLabel, tooFar ? '#f59e0b' : color, handForThisFace && confirmed);
 
-      // Catat absensi bila dikenali + tangan terangkat.
-      if (member && handForThisFace) {
+      // Catat absensi hanya bila: dikenali + terkonfirmasi stabil + tangan terangkat.
+      if (member && confirmed && handForThisFace) {
         maybeRecord(member);
       }
+    }
+
+    // Reset hitungan konfirmasi untuk identitas yang tak terlihat di frame ini.
+    for (const id of confirmCounts.keys()) {
+      if (!seenThisFrame.has(id)) confirmCounts.delete(id);
     }
 
     if (faces.length === 0) {
@@ -519,6 +605,11 @@
     }
     await start();
     if (!running) kioskStart.classList.remove('hide'); // gagal -> tampilkan layar mulai lagi
+  });
+
+  // Wake Lock dilepas otomatis saat tab tersembunyi; minta lagi saat terlihat.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && running && !wakeLock) requestWakeLock();
   });
 
   window.addEventListener('beforeunload', () => stream && stream.getTracks().forEach((t) => t.stop()));

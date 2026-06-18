@@ -2,25 +2,45 @@
 
 /*
  * Modul pengenalan wajah berbasis face-api.js (@vladmandic/face-api).
- * Memuat model dari CDN, lalu menyediakan util untuk:
- *  - mendeteksi 1 wajah + menghitung descriptor (untuk registrasi)
- *  - mendeteksi banyak wajah + descriptor (untuk absensi)
- *  - membangun FaceMatcher dari daftar anggota tim
+ * Memuat model dari CDN, lalu menyediakan util untuk deteksi & pencocokan.
+ *
+ * Konfigurasi akurasi ada di FACE.CONFIG di bawah.
  */
 
 const FACE = (() => {
   // CDN model. Bisa diganti ke folder lokal '/models' bila ingin offline.
   const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
 
+  const CONFIG = {
+    // Detektor wajah:
+    //  'ssd'  -> SSD MobileNet v1: lebih AKURAT (disarankan untuk kios khusus)
+    //  'tiny' -> TinyFaceDetector: lebih RINGAN (untuk PC berspesifikasi rendah)
+    detector: 'ssd',
+    ssdMinConfidence: 0.5,
+    tinyInputSize: 512,        // makin besar makin akurat tapi lebih berat
+    tinyScoreThreshold: 0.5,
+
+    // Ambang jarak euclidean; < nilai ini dianggap orang yang sama.
+    // face-api default 0.6. Kita pakai 0.48 agar lebih ketat (kurangi salah kenal).
+    matchThreshold: 0.48,
+
+    // Dipakai di halaman absensi (lihat attendance.js):
+    minConsecutive: 2,   // identitas harus terkonfirmasi N frame beruntun sebelum dicatat
+    minFaceRatio: 0.12,  // lebar wajah minimum relatif lebar frame (abaikan yg terlalu jauh)
+  };
+
   let loaded = false;
   let loadingPromise = null;
 
-  // Ambang jarak euclidean; < nilai ini dianggap orang yang sama.
-  // face-api default 0.6. Kita pakai 0.5 agar lebih ketat (mengurangi salah kenal).
-  const MATCH_THRESHOLD = 0.5;
-
-  const detectorOptions = () =>
-    new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 });
+  function detectorOptions() {
+    if (CONFIG.detector === 'tiny') {
+      return new faceapi.TinyFaceDetectorOptions({
+        inputSize: CONFIG.tinyInputSize,
+        scoreThreshold: CONFIG.tinyScoreThreshold,
+      });
+    }
+    return new faceapi.SsdMobilenetv1Options({ minConfidence: CONFIG.ssdMinConfidence });
+  }
 
   async function load(onProgress) {
     if (loaded) return;
@@ -28,7 +48,11 @@ const FACE = (() => {
 
     loadingPromise = (async () => {
       onProgress && onProgress('Memuat model deteksi wajah…');
-      await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      if (CONFIG.detector === 'tiny') {
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+      } else {
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+      }
       onProgress && onProgress('Memuat model landmark wajah…');
       await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
       onProgress && onProgress('Memuat model pengenalan wajah…');
@@ -72,16 +96,17 @@ const FACE = (() => {
       labelToMember[m.id] = m;
     }
     if (labeled.length === 0) return { matcher: null, labelToMember };
-    const matcher = new faceapi.FaceMatcher(labeled, MATCH_THRESHOLD);
+    const matcher = new faceapi.FaceMatcher(labeled, CONFIG.matchThreshold);
     return { matcher, labelToMember };
   }
 
   return {
+    CONFIG,
     load,
     detectSingle,
     detectAll,
     buildMatcher,
     isLoaded: () => loaded,
-    MATCH_THRESHOLD,
+    get MATCH_THRESHOLD() { return CONFIG.matchThreshold; },
   };
 })();

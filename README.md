@@ -179,11 +179,37 @@ mengubah konstanta `MODEL_URL` di:
 
 ## ⚙️ Penyetelan Akurasi
 
-- **Ambang pengenalan wajah** — `MATCH_THRESHOLD` di `public/js/face.js`
-  (default `0.5`; makin kecil makin ketat).
-- **Sensitivitas angkat tangan** — logika `handRaised` di `public/js/pose.js`
-  (default: pergelangan tangan di atas garis bahu).
+Semua dikonfigurasi di **`FACE.CONFIG`** (`public/js/face.js`):
+
+| Setelan | Default | Keterangan |
+|---|---|---|
+| `detector` | `'ssd'` | `'ssd'` = SSD MobileNet v1 (akurat, disarankan kios). `'tiny'` = TinyFaceDetector (ringan untuk PC lemah). |
+| `matchThreshold` | `0.48` | Ambang jarak; makin kecil makin ketat (kurangi salah kenal). |
+| `minConsecutive` | `2` | Identitas harus dikenali N frame beruntun sebelum dicatat (cegah salah kenal sesaat). |
+| `minFaceRatio` | `0.12` | Ukuran wajah minimum; wajah terlalu jauh diabaikan (descriptor jelek). |
+
+Tips akurasi: daftarkan **2–3 sampel wajah per orang** (sedikit beda sudut/ekspresi),
+pastikan pencahayaan cukup, dan wajah cukup dekat ke kamera saat registrasi.
+
+- **Sensitivitas angkat tangan** — logika `handRaised` di `public/js/pose.js`.
 - **Cooldown & anti-duplikat** — `COOLDOWN_MS` di `public/js/attendance.js`.
+
+## 🟢 Operasi 24 Jam (kios)
+
+Dirancang untuk menyala terus di pintu masuk:
+
+- **Cadence adaptif** — deteksi melambat saat sepi (hemat CPU & panas), otomatis
+  cepat lagi saat ada wajah.
+- **Auto-recovery kamera** — jika webcam (mis. eksternal) terputus/macet, sistem
+  menyambungkan ulang otomatis dengan backoff. Ada juga watchdog bila video beku.
+- **Screen Wake Lock** — mencegah layar tidur; diminta ulang saat tab kembali aktif.
+- **Auto-resume** — di mode kiosk, setelah reload/refresh kamera lanjut otomatis
+  tanpa perlu tap lagi.
+- **Reset harian** — tanggal & rekap disegarkan tiap ganti hari; absensi yang lupa
+  checkout ditutup otomatis (lihat Cron di atas).
+
+> Untuk PC kios berspesifikasi rendah, ubah `detector` ke `'tiny'` di
+> `public/js/face.js` agar lebih ringan.
 
 ## 🔒 Privasi & Keamanan
 

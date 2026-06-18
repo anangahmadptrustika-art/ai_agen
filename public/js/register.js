@@ -30,7 +30,7 @@
 
       setStatus('Meminta izin kamera…', 'warn');
       stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: 640, height: 480 },
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
         audio: false,
       });
       video.srcObject = stream;
@@ -63,8 +63,18 @@
     ctx.clearRect(0, 0, overlay.width, overlay.height);
 
     if (res) {
+      const box = res.detection.box;
+      // Kualitas: wajah harus cukup besar agar descriptor andal (akurasi).
+      const minW = overlay.width * 0.16;
+      if (box.width < minW) {
+        lastDetection = null;
+        drawBox(ctx, box, '#f59e0b');
+        setStatus('Wajah terlalu jauh — mendekatlah ke kamera', 'warn');
+        captureBtn.disabled = true;
+        return;
+      }
       lastDetection = res;
-      drawBox(ctx, res.detection.box, '#22c55e');
+      drawBox(ctx, box, '#22c55e');
       setStatus('Wajah terdeteksi — siap disimpan', 'on');
       captureBtn.disabled = false;
     } else {
