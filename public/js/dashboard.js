@@ -63,7 +63,7 @@
       // Jam pulang: jika sudah pulang tampilkan waktunya; jika belum & terlambat
       // tampilkan jam pulang minimal akibat sangsi.
       let pulang = '—';
-      if (r.checkOut) pulang = formatTime(r.checkOut);
+      if (r.checkOut) pulang = formatTime(r.checkOut) + (r.autoCheckout ? ' (auto)' : '');
       else if (late > 0) pulang = `≥ ${allowedCheckoutLabel(late)} (sangsi)`;
       const tr = document.createElement('tr');
       tr.append(

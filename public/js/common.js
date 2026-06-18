@@ -30,8 +30,12 @@ const API = {
     return r.ok;
   },
   async getAttendance(date) {
-    const q = date ? `?date=${date}` : '';
-    const r = await fetch(`/api/attendance${q}`);
+    const params = new URLSearchParams();
+    if (date) params.set('date', date);
+    // Kirim tanggal lokal "hari ini" agar server bisa auto-tutup absensi
+    // hari sebelumnya yang lupa checkout.
+    params.set('today', localDateStr());
+    const r = await fetch(`/api/attendance?${params.toString()}`);
     return r.json();
   },
   async recordAttendance(payload) {
@@ -88,6 +92,13 @@ function minutesToHHMM(min) {
   const h = Math.floor(min / 60);
   const m = min % 60;
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+/* Tanggal lokal perangkat (YYYY-MM-DD). */
+function localDateStr() {
+  const d = new Date();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${d.getFullYear()}-${m}-${day}`;
 }
 /* Jam paling awal boleh absen pulang (mis. "19:00"). */
 function allowedCheckoutLabel(lateMinutes) {
