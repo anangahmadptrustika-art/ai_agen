@@ -75,7 +75,7 @@
   function renderPresent(records) {
     presentCount.textContent = records.length;
     if (records.length === 0) {
-      presentList.innerHTML = '<p class="muted">Belum ada yang absen hari ini.</p>';
+      presentList.innerHTML = '<div class="empty"><span class="ico">🙌</span>Belum ada yang absen hari ini.</div>';
       return;
     }
     // Terbaru di atas.
@@ -84,14 +84,26 @@
     for (const r of sorted) {
       const row = document.createElement('div');
       row.className = 'member-row';
-      row.innerHTML = `
-        <div class="meta">
-          <span class="name"></span>
-          <span class="role"></span>
-        </div>
-        <span class="badge present">✔ ${formatTime(r.timestamp)}</span>`;
-      row.querySelector('.name').textContent = r.name;
-      row.querySelector('.role').textContent = r.role || 'Hadir';
+
+      const person = document.createElement('div');
+      person.className = 'person';
+      person.appendChild(makeAvatar(r.name));
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = r.name;
+      const role = document.createElement('span');
+      role.className = 'role';
+      role.textContent = r.role || 'Hadir';
+      meta.append(name, role);
+      person.appendChild(meta);
+
+      const badge = document.createElement('span');
+      badge.className = 'badge present';
+      badge.textContent = `✔ ${formatTime(r.timestamp)}`;
+
+      row.append(person, badge);
       presentList.appendChild(row);
     }
   }

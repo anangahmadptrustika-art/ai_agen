@@ -50,9 +50,12 @@
     for (const r of sorted) {
       const tr = document.createElement('tr');
       const method = r.method === 'hand-raise' ? 'Angkat tangan' : r.method;
-      tr.innerHTML = `<td></td><td></td><td>${formatTime(r.timestamp)}</td><td><span class="badge role">${method}</span></td>`;
-      tr.children[0].textContent = r.name;
-      tr.children[1].textContent = r.role || '-';
+      tr.append(
+        personCell(r.name),
+        textCell(r.role || '-'),
+        textCell(formatTime(r.timestamp)),
+        badgeCell(method, 'role')
+      );
       presentRows.appendChild(tr);
     }
   }
@@ -65,11 +68,35 @@
     absentRows.innerHTML = '';
     for (const m of members) {
       const tr = document.createElement('tr');
-      tr.innerHTML = `<td></td><td></td><td><span class="badge" style="background:#3f1d1d;color:#fca5a5;border:1px solid #7f1d1d">Belum hadir</span></td>`;
-      tr.children[0].textContent = m.name;
-      tr.children[1].textContent = m.role || '-';
+      tr.append(personCell(m.name), textCell(m.role || '-'), badgeCell('Belum hadir', 'absent'));
       absentRows.appendChild(tr);
     }
+  }
+
+  // Sel berisi avatar + nama.
+  function personCell(name) {
+    const td = document.createElement('td');
+    const wrap = document.createElement('div');
+    wrap.className = 'cell-person';
+    wrap.appendChild(makeAvatar(name, 30));
+    const span = document.createElement('span');
+    span.textContent = name;
+    wrap.appendChild(span);
+    td.appendChild(wrap);
+    return td;
+  }
+  function textCell(text) {
+    const td = document.createElement('td');
+    td.textContent = text;
+    return td;
+  }
+  function badgeCell(text, cls) {
+    const td = document.createElement('td');
+    const b = document.createElement('span');
+    b.className = `badge ${cls}`;
+    b.textContent = text;
+    td.appendChild(b);
+    return td;
   }
 
   function exportCSV() {

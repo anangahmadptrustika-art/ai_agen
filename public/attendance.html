@@ -3,23 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
   <title>Absensi · Absensi AI Vision</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><circle cx='16' cy='16' r='6' fill='white'/><circle cx='16' cy='16' r='2.6' fill='%232563eb'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+    })();
+  </script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">👁️</span> Absensi AI Vision</div>
-    <nav class="nav">
-      <a href="/">Beranda</a>
-      <a href="/register.html">Registrasi</a>
-      <a href="/attendance.html">Absensi</a>
-      <a href="/dashboard.html">Dashboard</a>
-    </nav>
+    <a class="brand" href="/">
+      <span class="logo">👁️</span>
+      <span>Absensi AI Vision<small>Kehadiran otomatis</small></span>
+    </a>
+    <div class="topbar-right">
+      <nav class="nav">
+        <a href="/">Beranda</a>
+        <a href="/register.html">Registrasi</a>
+        <a href="/attendance.html">Absensi</a>
+        <a href="/dashboard.html">Dashboard</a>
+      </nav>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Ganti tema" title="Ganti tema terang/gelap">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
   </header>
 
   <main class="container">
-    <h1>Absensi Live</h1>
-    <p class="subtitle">Hadapkan wajah ke kamera untuk dikenali, lalu <strong>angkat tangan</strong> untuk mencatat kehadiran.</p>
+    <div class="page-head">
+      <span class="eyebrow">📸 Langkah 2</span>
+      <h1>Absensi Live</h1>
+      <p class="subtitle">Hadapkan wajah ke kamera untuk dikenali, lalu <strong>angkat tangan</strong> untuk mencatat kehadiran.</p>
+    </div>
 
     <div class="grid cols-2">
       <div class="card">
@@ -29,30 +55,36 @@
         </div>
         <div class="row mt">
           <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Belum aktif</span></span>
-          <span class="status-pill"><span id="handDot" class="dot"></span> <span id="handStatus">Tangan: -</span></span>
+          <span class="status-pill"><span id="handDot" class="dot"></span> <span id="handStatus">Tangan: –</span></span>
           <div class="spacer"></div>
           <button id="startBtn" class="btn">▶ Mulai Absensi</button>
           <button id="stopBtn" class="btn secondary hide">⏸ Berhenti</button>
         </div>
-        <p class="muted mt" id="bootMsg"></p>
+        <p class="muted mt-sm" id="bootMsg"></p>
       </div>
 
       <div class="card">
-        <div class="row">
+        <div class="card-head">
           <h3 style="margin:0">Hadir Hari Ini</h3>
           <div class="spacer"></div>
-          <span id="presentCount" class="badge present">0</span>
+          <span id="presentCount" class="badge present count">0</span>
         </div>
-        <p class="muted" id="todayLabel"></p>
+        <p class="muted" id="todayLabel" style="margin:0 0 12px"></p>
         <div id="presentList" class="member-list">
-          <p class="muted">Belum ada yang absen hari ini.</p>
+          <div class="empty"><span class="ico">🙌</span>Belum ada yang absen hari ini.</div>
         </div>
-        <hr style="border-color:var(--border);margin:16px 0" />
-        <p class="muted" id="totalMembers">Anggota terdaftar: 0</p>
-        <p class="muted">Tip: daftarkan tim dulu di menu <a href="/register.html">Registrasi</a> bila daftar kosong.</p>
+        <hr class="hr" />
+        <div class="row" style="justify-content:space-between">
+          <span class="muted" id="totalMembers">Anggota terdaftar: 0</span>
+          <a class="btn ghost sm" href="/register.html">+ Tambah anggota</a>
+        </div>
       </div>
     </div>
   </main>
+
+  <footer class="footer">
+    Absensi AI Vision · Pengenalan wajah &amp; deteksi angkat tangan langsung di browser
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script src="/js/common.js"></script>

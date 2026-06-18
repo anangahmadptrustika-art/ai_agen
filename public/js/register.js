@@ -127,7 +127,7 @@
     const members = await API.getMembers();
     countBadge.textContent = members.length;
     if (members.length === 0) {
-      memberList.innerHTML = '<p class="muted">Belum ada anggota terdaftar.</p>';
+      memberList.innerHTML = '<div class="empty"><span class="ico">👥</span>Belum ada anggota terdaftar.</div>';
       return;
     }
     memberList.innerHTML = '';
@@ -135,16 +135,27 @@
       const row = document.createElement('div');
       row.className = 'member-row';
       const samples = (m.descriptors || []).length;
-      row.innerHTML = `
-        <div class="meta">
-          <span class="name"></span>
-          <span class="role"></span>
-        </div>
-        <button class="btn danger" data-id="${m.id}">Hapus</button>`;
-      row.querySelector('.name').textContent = m.name;
-      row.querySelector('.role').textContent =
-        `${m.role || 'Tanpa jabatan'} · ${samples} sampel wajah`;
-      row.querySelector('button').addEventListener('click', () => removeMember(m.id, m.name));
+
+      const person = document.createElement('div');
+      person.className = 'person';
+      person.appendChild(makeAvatar(m.name));
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = m.name;
+      const role = document.createElement('span');
+      role.className = 'role';
+      role.textContent = `${m.role || 'Tanpa jabatan'} · ${samples} sampel`;
+      meta.append(name, role);
+      person.appendChild(meta);
+
+      const del = document.createElement('button');
+      del.className = 'btn danger sm';
+      del.textContent = 'Hapus';
+      del.addEventListener('click', () => removeMember(m.id, m.name));
+
+      row.append(person, del);
       memberList.appendChild(row);
     }
   }

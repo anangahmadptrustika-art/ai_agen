@@ -3,51 +3,85 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
   <title>Dashboard · Absensi AI Vision</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><circle cx='16' cy='16' r='6' fill='white'/><circle cx='16' cy='16' r='2.6' fill='%232563eb'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+    })();
+  </script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">👁️</span> Absensi AI Vision</div>
-    <nav class="nav">
-      <a href="/">Beranda</a>
-      <a href="/register.html">Registrasi</a>
-      <a href="/attendance.html">Absensi</a>
-      <a href="/dashboard.html">Dashboard</a>
-    </nav>
+    <a class="brand" href="/">
+      <span class="logo">👁️</span>
+      <span>Absensi AI Vision<small>Kehadiran otomatis</small></span>
+    </a>
+    <div class="topbar-right">
+      <nav class="nav">
+        <a href="/">Beranda</a>
+        <a href="/register.html">Registrasi</a>
+        <a href="/attendance.html">Absensi</a>
+        <a href="/dashboard.html">Dashboard</a>
+      </nav>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Ganti tema" title="Ganti tema terang/gelap">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
   </header>
 
   <main class="container">
-    <h1>Dashboard Kehadiran</h1>
-    <p class="subtitle">Rekap kehadiran tim per tanggal.</p>
+    <div class="page-head">
+      <span class="eyebrow">📊 Langkah 3</span>
+      <h1>Dashboard Kehadiran</h1>
+      <p class="subtitle">Rekap kehadiran tim per tanggal — siapa yang sudah hadir, siapa yang belum.</p>
+    </div>
 
     <div class="grid cols-3">
-      <div class="card stat"><div class="num" id="statPresent">0</div><div class="lbl">Hadir</div></div>
-      <div class="card stat"><div class="num" id="statTotal">0</div><div class="lbl">Total Anggota</div></div>
-      <div class="card stat"><div class="num" id="statAbsent">0</div><div class="lbl">Belum Hadir</div></div>
+      <div class="card stat"><div class="stat-ico green">✅</div><div><div class="num" id="statPresent">0</div><div class="lbl">Hadir</div></div></div>
+      <div class="card stat"><div class="stat-ico blue">👥</div><div><div class="num" id="statTotal">0</div><div class="lbl">Total Anggota</div></div></div>
+      <div class="card stat"><div class="stat-ico red">⏳</div><div><div class="num" id="statAbsent">0</div><div class="lbl">Belum Hadir</div></div></div>
     </div>
 
     <div class="card mt">
-      <div class="row">
-        <label for="datePick" style="margin:0">Tanggal:</label>
+      <div class="row" style="margin-bottom:18px">
+        <label for="datePick" style="margin:0">Tanggal</label>
         <input type="date" id="datePick" style="width:auto" />
         <div class="spacer"></div>
         <button id="exportBtn" class="btn secondary">⬇ Export CSV</button>
       </div>
 
-      <h3 class="mt">Sudah Hadir</h3>
-      <table>
-        <thead><tr><th>Nama</th><th>Jabatan</th><th>Jam Hadir</th><th>Metode</th></tr></thead>
-        <tbody id="presentRows"><tr><td colspan="4" class="muted">Memuat…</td></tr></tbody>
-      </table>
+      <div class="card-head"><h3 style="margin:0">Sudah Hadir</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nama</th><th>Jabatan</th><th>Jam Hadir</th><th>Metode</th></tr></thead>
+          <tbody id="presentRows"><tr><td colspan="4" class="muted">Memuat…</td></tr></tbody>
+        </table>
+      </div>
 
-      <h3 class="mt">Belum Hadir</h3>
-      <table>
-        <thead><tr><th>Nama</th><th>Jabatan</th><th>Status</th></tr></thead>
-        <tbody id="absentRows"><tr><td colspan="3" class="muted">Memuat…</td></tr></tbody>
-      </table>
+      <div class="card-head" style="margin-top:22px"><h3 style="margin:0">Belum Hadir</h3></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nama</th><th>Jabatan</th><th>Status</th></tr></thead>
+          <tbody id="absentRows"><tr><td colspan="3" class="muted">Memuat…</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </main>
+
+  <footer class="footer">
+    Absensi AI Vision · Pengenalan wajah &amp; deteksi angkat tangan langsung di browser
+  </footer>
 
   <script src="/js/common.js"></script>
   <script src="/js/dashboard.js"></script>

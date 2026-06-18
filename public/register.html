@@ -3,23 +3,49 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#ffffff" />
   <title>Registrasi Tim · Absensi AI Vision</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><circle cx='16' cy='16' r='6' fill='white'/><circle cx='16' cy='16' r='2.6' fill='%232563eb'/></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/style.css" />
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('theme');
+        if (!t) t = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', t);
+      } catch (e) { document.documentElement.setAttribute('data-theme', 'light'); }
+    })();
+  </script>
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="logo">👁️</span> Absensi AI Vision</div>
-    <nav class="nav">
-      <a href="/">Beranda</a>
-      <a href="/register.html">Registrasi</a>
-      <a href="/attendance.html">Absensi</a>
-      <a href="/dashboard.html">Dashboard</a>
-    </nav>
+    <a class="brand" href="/">
+      <span class="logo">👁️</span>
+      <span>Absensi AI Vision<small>Kehadiran otomatis</small></span>
+    </a>
+    <div class="topbar-right">
+      <nav class="nav">
+        <a href="/">Beranda</a>
+        <a href="/register.html">Registrasi</a>
+        <a href="/attendance.html">Absensi</a>
+        <a href="/dashboard.html">Dashboard</a>
+      </nav>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Ganti tema" title="Ganti tema terang/gelap">
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </button>
+    </div>
   </header>
 
   <main class="container">
-    <h1>Registrasi Anggota Tim</h1>
-    <p class="subtitle">Hadapkan wajah anggota ke kamera, isi nama, lalu simpan. Ambil beberapa sampel agar pengenalan lebih akurat.</p>
+    <div class="page-head">
+      <span class="eyebrow">🧑‍💼 Langkah 1</span>
+      <h1>Registrasi Anggota Tim</h1>
+      <p class="subtitle">Hadapkan wajah anggota ke kamera, isi nama, lalu simpan. Ambil 2–3 sampel per orang agar pengenalan makin akurat.</p>
+    </div>
 
     <div class="grid cols-2">
       <div class="card">
@@ -28,34 +54,38 @@
           <canvas id="overlay"></canvas>
         </div>
         <div class="row mt">
-          <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Menyiapkan kamera…</span></span>
+          <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Kamera belum aktif</span></span>
           <div class="spacer"></div>
-          <button id="startCam" class="btn secondary">Aktifkan Kamera</button>
+          <button id="startCam" class="btn secondary">📷 Aktifkan Kamera</button>
         </div>
       </div>
 
       <div class="card">
-        <h3>Data Anggota</h3>
+        <div class="card-head"><h3>Data Anggota</h3></div>
         <label for="name">Nama lengkap</label>
-        <input type="text" id="name" placeholder="mis. Budi Santoso" />
+        <input type="text" id="name" placeholder="mis. Budi Santoso" autocomplete="off" />
         <label for="role">Jabatan / divisi (opsional)</label>
-        <input type="text" id="role" placeholder="mis. Tim Marketing" />
+        <input type="text" id="role" placeholder="mis. Tim Marketing" autocomplete="off" />
 
-        <button id="capture" class="btn block mt" disabled>📸 Tangkap Wajah & Simpan</button>
-        <p class="muted mt" id="hint">Pastikan hanya ada satu wajah yang jelas di kamera.</p>
+        <button id="capture" class="btn block mt" disabled>📸 Tangkap Wajah &amp; Simpan</button>
+        <p class="muted mt-sm" id="hint">Pastikan hanya ada satu wajah yang jelas & cukup terang di kamera.</p>
 
-        <hr style="border-color:var(--border);margin:18px 0" />
-        <div class="row">
+        <hr class="hr" />
+        <div class="card-head">
           <h3 style="margin:0">Anggota Terdaftar</h3>
           <div class="spacer"></div>
-          <span id="count" class="badge role">0</span>
+          <span id="count" class="badge role count">0</span>
         </div>
         <div id="memberList" class="member-list">
-          <p class="muted">Belum ada anggota terdaftar.</p>
+          <div class="empty"><span class="ico">👥</span>Belum ada anggota terdaftar.</div>
         </div>
       </div>
     </div>
   </main>
+
+  <footer class="footer">
+    Absensi AI Vision · Pengenalan wajah &amp; deteksi angkat tangan langsung di browser
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
   <script src="/js/common.js"></script>
