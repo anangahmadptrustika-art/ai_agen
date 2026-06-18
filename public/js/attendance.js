@@ -33,8 +33,12 @@
   const cameraSelect = document.getElementById('cameraSelect');
   const fullscreenBtn = document.getElementById('fullscreenBtn');
   const fsToggle = document.getElementById('fsToggle');
+  const kioskStart = document.getElementById('kioskStart');
+  const kioskStartBtn = document.getElementById('kioskStartBtn');
+  const KIOSK = new URLSearchParams(location.search).has('kiosk');
   let flashTimer = null;
   let currentDeviceId = (() => { try { return localStorage.getItem('cameraId'); } catch (_) { return null; } })();
+  let activeDate = null;
 
   let stream = null;
   let running = false;
@@ -68,14 +72,38 @@
     handDot.className = `dot ${state || ''}`;
   }
 
-  async function init() {
+  function updateTodayLabel() {
     todayLabel.textContent = new Date().toLocaleDateString('id-ID', {
       weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
     });
+  }
+
+  // Reset otomatis saat ganti hari: rekap & memori sesi disegarkan.
+  function checkDayRollover() {
+    const d = localDate();
+    if (d !== activeDate) {
+      activeDate = d;
+      presentToday.clear();
+      recentlyRecorded.clear();
+      updateTodayLabel();
+      loadPresentToday();
+    }
+  }
+
+  async function init() {
+    activeDate = localDate();
+    updateTodayLabel();
     await loadPresentToday();
     // Tampilkan jumlah anggota terdaftar (matcher dibangun saat tombol Mulai ditekan).
     const members = await API.getMembers();
     totalMembers.textContent = `Anggota terdaftar: ${members.length}`;
+    // Pantau pergantian hari (untuk kios yang menyala terus).
+    setInterval(checkDayRollover, 30000);
+    // Aktifkan tampilan kiosk bila dibuka via menu Kiosk (?kiosk=1).
+    if (KIOSK) {
+      document.body.classList.add('kiosk');
+      kioskStart.classList.remove('hide');
+    }
   }
 
   async function loadPresentToday() {
@@ -480,6 +508,17 @@
       currentDeviceId = id;
       try { localStorage.setItem('cameraId', id); } catch (_) {}
     }
+  });
+
+  // Mode kiosk: satu tap untuk masuk layar penuh + mulai kamera (butuh gesture).
+  kioskStartBtn.addEventListener('click', async () => {
+    kioskStart.classList.add('hide');
+    if (!isFullscreen()) {
+      const req = stage.requestFullscreen || stage.webkitRequestFullscreen;
+      if (req) { try { await req.call(stage); } catch (_) {} }
+    }
+    await start();
+    if (!running) kioskStart.classList.remove('hide'); // gagal -> tampilkan layar mulai lagi
   });
 
   window.addEventListener('beforeunload', () => stream && stream.getTracks().forEach((t) => t.stop()));

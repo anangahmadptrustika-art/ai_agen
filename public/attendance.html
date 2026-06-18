@@ -32,6 +32,7 @@
         <a href="/register.html">Registrasi</a>
         <a href="/attendance.html">Absensi</a>
         <a href="/dashboard.html">Dashboard</a>
+        <a href="/attendance.html?kiosk=1">🖥️ Kiosk</a>
       </nav>
       <button id="themeToggle" class="theme-toggle" type="button" aria-label="Ganti tema" title="Ganti tema terang/gelap">
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
@@ -77,7 +78,7 @@
           </div>
         </div>
 
-        <div class="row mt">
+        <div class="row mt" id="controlsRow">
           <select id="cameraSelect" class="cam-select" title="Pilih kamera" disabled>
             <option>📷 Kamera default</option>
           </select>
@@ -89,7 +90,7 @@
         <p class="muted mt-sm" id="bootMsg"></p>
       </div>
 
-      <div class="card">
+      <div class="card" id="presentCard">
         <div class="card-head">
           <h3 style="margin:0">Hadir Hari Ini</h3>
           <div class="spacer"></div>
@@ -107,6 +108,17 @@
       </div>
     </div>
   </main>
+
+  <div id="kioskStart" class="kiosk-start hide">
+    <div class="kiosk-start-inner">
+      <div class="kiosk-logo">👁️</div>
+      <h2>Mode Kiosk — Absensi AI Vision</h2>
+      <p class="muted">Tekan tombol di bawah untuk mengaktifkan kamera &amp; masuk layar penuh. Setelah itu, karyawan cukup menghadap kamera lalu <strong>angkat tangan</strong>.</p>
+      <button id="kioskStartBtn" class="btn lg">▶ Mulai Mode Kiosk</button>
+      <p class="kiosk-hint" id="kioskHint">Tekan Esc kapan saja untuk keluar dari layar penuh.</p>
+      <a class="kiosk-exit" href="/attendance.html">← Keluar mode kiosk</a>
+    </div>
+  </div>
 
   <footer class="footer">
     Absensi AI Vision · Pengenalan wajah &amp; deteksi angkat tangan langsung di browser

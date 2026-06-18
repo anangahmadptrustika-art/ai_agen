@@ -446,6 +446,39 @@ input:focus, select:focus {
 
 .cam-select { width: auto; max-width: 240px; padding: 9px 12px; font-size: 14px; }
 
+/* --------------------------- Mode Kiosk -------------------------------- */
+body.kiosk .topbar,
+body.kiosk .footer,
+body.kiosk .page-head,
+body.kiosk #presentCard,
+body.kiosk #controlsRow,
+body.kiosk #bootMsg { display: none !important; }
+body.kiosk .container { max-width: none; padding: 0; }
+body.kiosk .grid.cam-layout { grid-template-columns: 1fr; gap: 0; }
+body.kiosk .card { border: 0; border-radius: 0; padding: 0; background: #000; box-shadow: none; }
+body.kiosk .video-wrap.big { aspect-ratio: auto; width: 100vw; height: 100vh; border: 0; border-radius: 0; }
+
+/* Layar awal kiosk (satu kali tap untuk mulai) */
+.kiosk-start {
+  position: fixed; inset: 0; z-index: 90;
+  display: grid; place-items: center;
+  background: var(--bg-grad), var(--bg);
+  padding: 24px;
+}
+.kiosk-start.hide { display: none !important; }
+.kiosk-start-inner { text-align: center; max-width: 470px; }
+.kiosk-logo {
+  width: 78px; height: 78px; margin: 0 auto 18px;
+  border-radius: 20px; display: grid; place-items: center; font-size: 40px;
+  background: linear-gradient(140deg, #3b82f6, #2563eb 55%, #4f46e5);
+  box-shadow: var(--shadow-primary);
+}
+.kiosk-start h2 { font-size: clamp(22px, 4vw, 28px); margin: 0 0 10px; }
+.kiosk-start p { line-height: 1.55; }
+.kiosk-start .btn.lg { margin-top: 18px; font-size: 17px; padding: 15px 30px; }
+.kiosk-hint { font-size: 13px; color: var(--muted); margin-top: 16px; }
+.kiosk-exit { display: inline-block; margin-top: 16px; font-size: 14px; font-weight: 600; }
+
 /* ----------------------- Mode layar penuh (kiosk) ---------------------- */
 .video-wrap:fullscreen,
 .video-wrap:-webkit-full-screen {
