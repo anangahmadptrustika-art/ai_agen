@@ -94,6 +94,23 @@ HTTPS, akses kamera langsung diizinkan dari perangkat mana pun. 🎉
 > `"backend":"postgres"`, berarti database sudah aktif. Bila `"json"`, berarti
 > `DATABASE_URL` belum terbaca (ulangi Langkah 3–4).
 
+### Cron — auto absen-pulang harian
+
+`vercel.json` mendaftarkan **Vercel Cron** yang berjalan tiap hari ~**00:00 WIB**
+(`0 17 * * *` UTC) memanggil `GET /api/cron`. Tugasnya: menutup absensi hari
+sebelumnya yang **lupa checkout**, dengan jam pulang sesuai jadwal
+(17:00, atau 17:00 + sangsi bila terlambat).
+
+- Cron job muncul di Vercel → **Settings → Cron Jobs** setelah deploy.
+- **Opsional (disarankan):** set env `CRON_SECRET` (string acak) agar endpoint
+  hanya bisa dipicu oleh cron Vercel. Vercel otomatis mengirim header
+  `Authorization: Bearer <CRON_SECRET>` saat menjalankan cron.
+- **Opsional:** `TZ_OFFSET_MINUTES` (default `420` = WIB/UTC+7) — sesuaikan
+  bila zona waktu kantor berbeda.
+
+> Catatan: finalisasi juga berjalan otomatis (lazy) setiap kali dashboard/halaman
+> absensi dibuka, jadi data tetap akurat walau cron belum sempat jalan.
+
 ### Pemakaian
 
 1. **Registrasi** (`/register.html`)
