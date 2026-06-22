@@ -35,6 +35,8 @@
   const fsToggle = document.getElementById('fsToggle');
   const kioskStart = document.getElementById('kioskStart');
   const kioskStartBtn = document.getElementById('kioskStartBtn');
+  const kioskPresentList = document.getElementById('kioskPresentList');
+  const kioskPresentCount = document.getElementById('kioskPresentCount');
   const KIOSK = new URLSearchParams(location.search).has('kiosk');
   let flashTimer = null;
   let currentDeviceId = (() => { try { return localStorage.getItem('cameraId'); } catch (_) { return null; } })();
@@ -152,14 +154,17 @@
 
   function renderPresent(records) {
     presentCount.textContent = records.length;
-    if (records.length === 0) {
-      presentList.innerHTML = '<div class="empty"><span class="ico">🙌</span>Belum ada yang absen hari ini.</div>';
-      return;
-    }
     // Terbaru di atas.
     const sorted = [...records].sort((a, b) =>
       (b.checkIn || b.timestamp).localeCompare(a.checkIn || a.timestamp)
     );
+    // Panel melayang di mode kiosk (sisi kanan).
+    renderKioskPresent(sorted);
+
+    if (records.length === 0) {
+      presentList.innerHTML = '<div class="empty"><span class="ico">🙌</span>Belum ada yang absen hari ini.</div>';
+      return;
+    }
     presentList.innerHTML = '';
     for (const r of sorted) {
       const checkIn = r.checkIn || r.timestamp;
@@ -198,6 +203,37 @@
 
       row.append(person, badges);
       presentList.appendChild(row);
+    }
+  }
+
+  // Panel "Sudah Absen" melayang di sisi kanan (hanya tampil di mode kiosk).
+  function renderKioskPresent(sorted) {
+    if (!kioskPresentList) return;
+    kioskPresentCount.textContent = sorted.length;
+    if (sorted.length === 0) {
+      kioskPresentList.innerHTML = '<div class="kp-empty">Belum ada yang absen.</div>';
+      return;
+    }
+    kioskPresentList.innerHTML = '';
+    for (const r of sorted) {
+      const checkIn = r.checkIn || r.timestamp;
+      const late = lateMinutesFrom(checkIn);
+      const row = document.createElement('div');
+      row.className = 'kp-row';
+      row.appendChild(makeAvatar(r.name, 34));
+      const meta = document.createElement('div');
+      meta.className = 'kp-meta';
+      const name = document.createElement('span');
+      name.className = 'kp-name';
+      name.textContent = r.name;
+      const time = document.createElement('span');
+      time.className = 'kp-time';
+      time.textContent = r.checkOut
+        ? `🏁 Pulang ${formatTime(r.checkOut)}`
+        : `${late > 0 ? '⏰' : '✔'} ${formatTime(checkIn)}`;
+      meta.append(name, time);
+      row.appendChild(meta);
+      kioskPresentList.appendChild(row);
     }
   }
 
