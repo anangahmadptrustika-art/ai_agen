@@ -226,12 +226,18 @@
       const name = document.createElement('span');
       name.className = 'kp-name';
       name.textContent = r.name;
-      const time = document.createElement('span');
-      time.className = 'kp-time';
-      time.textContent = r.checkOut
-        ? `🏁 Pulang ${formatTime(r.checkOut)}`
-        : `${late > 0 ? '⏰' : '✔'} ${formatTime(checkIn)}`;
-      meta.append(name, time);
+      const tin = document.createElement('span');
+      tin.className = 'kp-time';
+      tin.textContent = `${late > 0 ? '⏰' : '✔'} Masuk ${formatTime(checkIn)}`;
+      const tout = document.createElement('span');
+      tout.className = 'kp-out';
+      if (r.checkOut) {
+        tout.textContent = `🏁 Pulang ${formatTime(r.checkOut)}`;
+        tout.classList.add('done');
+      } else {
+        tout.textContent = '· Belum pulang';
+      }
+      meta.append(name, tin, tout);
       row.appendChild(meta);
       kioskPresentList.appendChild(row);
     }
@@ -522,13 +528,15 @@
     ctx.fillText(text, box.x + padX, ty + 17);
   }
 
-  // Tampilkan overlay besar "ABSEN BERHASIL" di atas kamera.
-  function showFlash({ title, name, time, lateMinutes = 0, sanction = '', type = 'success' }) {
-    flash.classList.toggle('out', type === 'out');
-    flashIco.textContent = type === 'out' ? '🏁' : '✓';
+  // Tampilkan overlay besar (sukses / pulang / peringatan) di atas kamera.
+  function showFlash({ title, name, time, timeLabel = 'Pukul', lateMinutes = 0, sanction = '', type = 'success' }) {
+    flash.classList.remove('out', 'warn');
+    if (type === 'out') flash.classList.add('out');
+    if (type === 'warn') flash.classList.add('warn');
+    flashIco.textContent = type === 'out' ? '🏁' : (type === 'warn' ? '⛔' : '✓');
     flashTitle.textContent = title;
     flashName.textContent = name;
-    flashTime.textContent = time ? `Pukul ${time}` : '';
+    flashTime.textContent = time ? `${timeLabel} ${time}` : '';
 
     if (lateMinutes > 0) {
       flashLate.textContent = `⏰ TERLAMBAT ${formatLate(lateMinutes)}`;
@@ -551,7 +559,7 @@
     flash.style.animation = '';
 
     clearTimeout(flashTimer);
-    flashTimer = setTimeout(() => flash.classList.add('hide'), sanction ? 5200 : 3600);
+    flashTimer = setTimeout(() => flash.classList.add('hide'), (sanction || type === 'warn') ? 5200 : 3600);
   }
 
   async function maybeRecord(member) {
@@ -602,17 +610,28 @@
       } else if (result.status === 'already_in') {
         presentToday.add(member.id);
         const late = result.record.lateMinutes || 0;
-        if (late > 0) {
-          toast(
-            '⛔ Kena sangsi waktu',
-            `${member.name} terlambat ${formatLate(late)} → sangsi ${sanctionHours(late)} jam. Baru bisa absen pulang jam ${allowedCheckoutLabel(late)}.`,
-            'error', 5200
-          );
-        } else {
-          toast('Anda sudah absen', `${member.name}, belum waktunya pulang (jam pulang ${WORK.endLabel}).`, 'warn', 4200);
-        }
+        const checkIn = result.record.checkIn || result.record.timestamp;
+        const msg = late > 0
+          ? `⛔ SANGSI ${sanctionHours(late)} JAM — absen pulang jam ${allowedCheckoutLabel(late)}`
+          : `Jam pulang ${WORK.endLabel}`;
+        // Peringatan BESAR satu layar (bukan toast kecil).
+        showFlash({
+          title: 'BELUM WAKTUNYA PULANG',
+          name: member.name,
+          time: formatTime(checkIn),
+          timeLabel: 'Sudah absen masuk pukul',
+          sanction: msg,
+          type: 'warn',
+        });
       } else if (result.status === 'already_out') {
-        toast('Sudah lengkap', `${member.name} sudah absen masuk & pulang hari ini.`, 'info');
+        showFlash({
+          title: 'SUDAH ABSEN LENGKAP',
+          name: member.name,
+          time: formatTime(result.record.checkOut || result.record.checkIn),
+          timeLabel: 'Pulang pukul',
+          sanction: 'Masuk & pulang sudah tercatat hari ini ✓',
+          type: 'warn',
+        });
       }
     } catch (err) {
       toast('Gagal mencatat', err.message, 'error');
