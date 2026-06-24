@@ -32,6 +32,7 @@
         <a href="/register.html">Registrasi</a>
         <a href="/attendance.html">Absensi</a>
         <a href="/dashboard.html">Dashboard</a>
+        <a href="/rekap.html">Rekap</a>
         <a href="/attendance.html?kiosk=1">🖥️ Kiosk</a>
       </nav>
       <button id="themeToggle" class="theme-toggle" type="button" aria-label="Ganti tema" title="Ganti tema terang/gelap">
@@ -50,9 +51,14 @@
 
     <div class="grid cam-layout">
       <div class="card">
-        <div class="video-wrap big" id="stage">
+        <div class="video-wrap big mirror" id="stage">
           <video id="video" autoplay muted playsinline disablepictureinpicture></video>
           <canvas id="overlay"></canvas>
+
+          <div class="cam-clock">
+            <span class="clock-time" id="clockTime">--:--:--</span>
+            <span class="clock-date" id="clockDate"></span>
+          </div>
 
           <div class="cam-hud">
             <span class="status-pill"><span id="faceDot" class="dot"></span> <span id="faceStatus">Belum aktif</span></span>

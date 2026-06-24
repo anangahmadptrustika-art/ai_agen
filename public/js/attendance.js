@@ -37,6 +37,8 @@
   const kioskStartBtn = document.getElementById('kioskStartBtn');
   const kioskPresentList = document.getElementById('kioskPresentList');
   const kioskPresentCount = document.getElementById('kioskPresentCount');
+  const clockTime = document.getElementById('clockTime');
+  const clockDate = document.getElementById('clockDate');
   const KIOSK = new URLSearchParams(location.search).has('kiosk');
   let flashTimer = null;
   let currentDeviceId = (() => { try { return localStorage.getItem('cameraId'); } catch (_) { return null; } })();
@@ -56,6 +58,7 @@
   const IDLE_INTERVAL_MS = 700;    // saat sepi: lambat (hemat CPU/panas untuk 24 jam)
   const IDLE_AFTER_MS = 4000;      // dianggap sepi bila tak ada wajah selama ini
   const KIOSK_RELOAD_HOUR = 4;     // jam lokal untuk reload pemeliharaan harian (kios 24 jam)
+  const MIRROR = true;             // tampilan kamera mode cermin (balik horizontal)
 
   const presentToday = new Set(); // memberId yang sudah hadir hari ini
   const confirmCounts = new Map(); // memberId -> jumlah frame beruntun dikenali (anti salah-kenal)
@@ -88,6 +91,13 @@
     });
   }
 
+  // Jam digital di bawah kamera.
+  function updateClock() {
+    const d = new Date();
+    if (clockTime) clockTime.textContent = d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (clockDate) clockDate.textContent = d.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
   // Reset otomatis saat ganti hari: rekap & memori sesi disegarkan.
   function checkDayRollover() {
     const d = localDate();
@@ -118,6 +128,8 @@
   async function init() {
     activeDate = localDate();
     updateTodayLabel();
+    updateClock();
+    setInterval(updateClock, 1000);
     await loadPresentToday();
     // Tampilkan jumlah anggota terdaftar (matcher dibangun saat tombol Mulai ditekan).
     const members = await API.getMembers();
@@ -513,9 +525,13 @@
   }
 
   function drawFace(ctx, box, label, color, handRaised) {
+    // Saat mode cermin, balik koordinat X agar kotak sejajar dengan video
+    // yang dibalik — tetapi teks digambar normal (tidak terbalik).
+    const bx = MIRROR ? (overlay.width - box.x - box.width) : box.x;
+
     ctx.lineWidth = 3;
     ctx.strokeStyle = color;
-    ctx.strokeRect(box.x, box.y, box.width, box.height);
+    ctx.strokeRect(bx, box.y, box.width, box.height);
 
     const text = handRaised ? `${label}  ✋` : label;
     ctx.font = '600 16px system-ui, sans-serif';
@@ -523,9 +539,9 @@
     const tw = ctx.measureText(text).width + padX * 2;
     const ty = box.y > 26 ? box.y - 24 : box.y + box.height;
     ctx.fillStyle = color;
-    ctx.fillRect(box.x, ty, tw, 24);
+    ctx.fillRect(bx, ty, tw, 24);
     ctx.fillStyle = '#06283d';
-    ctx.fillText(text, box.x + padX, ty + 17);
+    ctx.fillText(text, bx + padX, ty + 17);
   }
 
   // Tampilkan overlay besar (sukses / pulang / peringatan) di atas kamera.

@@ -38,6 +38,12 @@ const API = {
     const r = await fetch(`/api/attendance?${params.toString()}`);
     return r.json();
   },
+  async getAttendanceRange(from, to) {
+    const params = new URLSearchParams({ from, to, today: localDateStr() });
+    const r = await fetch(`/api/attendance/range?${params.toString()}`);
+    if (!r.ok) throw new Error((await r.json()).error || 'Gagal memuat rekap');
+    return r.json();
+  },
   async recordAttendance(payload) {
     // payload: { memberId, date, time, phase, lateMinutes, method }
     const r = await fetch('/api/attendance', {
@@ -104,6 +110,17 @@ function localDateStr() {
 function allowedCheckoutLabel(lateMinutes) {
   return minutesToHHMM(allowedCheckoutMinutes(lateMinutes));
 }
+
+/* --------------------------- Sistem Poin ------------------------------ */
+/* Penilaian untuk rekap: makin cepat datang & makin disiplin, makin tinggi. */
+const POINTS = {
+  hadir: 1,          // hadir hari itu
+  tepatWaktu: 2,     // masuk <= 08:00
+  tercepat1: 5,      // tercepat ke-1 hari itu
+  tercepat2: 3,      // tercepat ke-2
+  tercepat3: 1,      // tercepat ke-3
+  telatBerat: -1,    // terlambat > 120 menit
+};
 
 /* Toast notifikasi sederhana. */
 function toast(title, message = '', type = 'info', ms = 3200) {

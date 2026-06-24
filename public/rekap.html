@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#ffffff" />
-  <title>Dashboard · Absensi AI Vision</title>
+  <title>Rekap Bulanan · Absensi AI Vision</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%232563eb'/><circle cx='16' cy='16' r='6' fill='white'/><circle cx='16' cy='16' r='2.6' fill='%232563eb'/></svg>" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -44,47 +44,62 @@
 
   <main class="container">
     <div class="page-head">
-      <span class="eyebrow">📊 Langkah 3</span>
-      <h1>Dashboard Kehadiran</h1>
-      <p class="subtitle">Rekap kehadiran tim per tanggal. <strong>Jam masuk 08:00</strong> · <strong>Jam pulang 17:00</strong> — kehadiran lewat 08:00 dihitung terlambat.</p>
+      <span class="eyebrow">🏆 Penilaian & Rekap</span>
+      <h1>Rekap Bulanan</h1>
+      <p class="subtitle">Pilih rentang tanggal untuk melihat rekap kehadiran & papan peringkat. Poin lebih tinggi untuk yang <strong>datang lebih cepat</strong> dan disiplin.</p>
     </div>
 
-    <div class="grid cols-3">
-      <div class="card stat"><div class="stat-ico blue">👥</div><div><div class="num" id="statTotal">0</div><div class="lbl">Total Anggota</div></div></div>
-      <div class="card stat"><div class="stat-ico green">✅</div><div><div class="num" id="statPresent">0</div><div class="lbl">Hadir</div></div></div>
-      <div class="card stat"><div class="stat-ico amber">⏰</div><div><div class="num" id="statLate">0</div><div class="lbl">Terlambat</div></div></div>
-      <div class="card stat"><div class="stat-ico red">⏳</div><div><div class="num" id="statAbsent">0</div><div class="lbl">Belum Hadir</div></div></div>
-    </div>
-
-    <div class="card mt">
-      <div class="row" style="margin-bottom:18px">
-        <label for="datePick" style="margin:0">Tanggal</label>
-        <input type="date" id="datePick" style="width:auto" />
+    <div class="card">
+      <div class="row" style="align-items:flex-end">
+        <div>
+          <label for="fromDate" style="margin:0 0 6px">Dari tanggal</label>
+          <input type="date" id="fromDate" style="width:auto" />
+        </div>
+        <div>
+          <label for="toDate" style="margin:0 0 6px">Sampai tanggal</label>
+          <input type="date" id="toDate" style="width:auto" />
+        </div>
+        <button id="showBtn" class="btn">📊 Tampilkan</button>
         <div class="spacer"></div>
         <button id="exportBtn" class="btn secondary">⬇ Export CSV</button>
       </div>
-
-      <div class="card-head"><h3 style="margin:0">Sudah Hadir</h3></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Nama</th><th>Jabatan</th><th>Jam Masuk</th><th>Terlambat</th><th>Jam Pulang</th><th>Status</th></tr></thead>
-          <tbody id="presentRows"><tr><td colspan="6" class="muted">Memuat…</td></tr></tbody>
-        </table>
+      <div class="legend mt">
+        <span class="chip">Hadir +1</span>
+        <span class="chip">Tepat waktu (≤08:00) +2</span>
+        <span class="chip">🥇 Tercepat +5</span>
+        <span class="chip">🥈 Tercepat-2 +3</span>
+        <span class="chip">🥉 Tercepat-3 +1</span>
+        <span class="chip">Telat &gt;2 jam −1</span>
       </div>
+    </div>
 
-      <div class="card-head" style="margin-top:24px"><h3 style="margin:0">⏰ Daftar Terlambat</h3></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Nama</th><th>Jabatan</th><th>Jam Masuk</th><th>Keterlambatan (dari 08:00)</th></tr></thead>
-          <tbody id="lateRows"><tr><td colspan="4" class="muted">Memuat…</td></tr></tbody>
-        </table>
+    <div class="grid cols-3 mt">
+      <div class="card stat"><div class="stat-ico blue">📅</div><div><div class="num" id="statDays">0</div><div class="lbl">Hari Kerja (ada absensi)</div></div></div>
+      <div class="card stat"><div class="stat-ico green">👥</div><div><div class="num" id="statMembers">0</div><div class="lbl">Anggota Aktif</div></div></div>
+      <div class="card stat"><div class="stat-ico amber">⏰</div><div><div class="num" id="statLate">0</div><div class="lbl">Total Keterlambatan</div></div></div>
+    </div>
+
+    <div class="card champion mt" id="championCard" style="display:none">
+      <div class="medal">🏆</div>
+      <div>
+        <div class="muted" style="font-size:13px;font-weight:700">KARYAWAN TERCEPAT &amp; TERDISIPLIN</div>
+        <div class="who" id="championName">—</div>
+        <div class="muted" id="championDetail" style="font-size:13px"></div>
       </div>
+      <div class="pts"><div class="n" id="championPts">0</div><div class="lbl muted">poin</div></div>
+    </div>
 
-      <div class="card-head" style="margin-top:24px"><h3 style="margin:0">Belum Hadir</h3></div>
+    <div class="card mt">
+      <div class="card-head"><h3 style="margin:0">🏅 Papan Peringkat</h3><div class="spacer"></div><span class="muted" id="rangeLabel"></span></div>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>Nama</th><th>Jabatan</th><th>Status</th></tr></thead>
-          <tbody id="absentRows"><tr><td colspan="3" class="muted">Memuat…</td></tr></tbody>
+          <thead>
+            <tr>
+              <th>#</th><th>Nama</th><th>Hadir</th><th>Tepat Waktu</th><th>Terlambat</th>
+              <th>🥇 Tercepat</th><th>Rata-rata Masuk</th><th>Poin</th>
+            </tr>
+          </thead>
+          <tbody id="rankRows"><tr><td colspan="8" class="muted">Pilih rentang tanggal lalu klik Tampilkan.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -95,6 +110,6 @@
   </footer>
 
   <script src="/js/common.js"></script>
-  <script src="/js/dashboard.js"></script>
+  <script src="/js/rekap.js"></script>
 </body>
 </html>

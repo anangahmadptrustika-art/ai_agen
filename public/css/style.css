@@ -350,6 +350,9 @@ input:focus, select:focus {
   object-fit: cover;
 }
 .video-wrap canvas { pointer-events: none; }
+/* Mode cermin: balik tampilan kamera secara horizontal (kanvas overlay
+   tidak dibalik via CSS; koordinat gambar dibalik di JS agar teks tetap normal). */
+.video-wrap.mirror video { transform: scaleX(-1); }
 /* Placeholder saat kamera belum aktif */
 .video-wrap::before {
   content: '';
@@ -529,6 +532,50 @@ body.kiosk .kiosk-present {
 .kp-out { font-size: 12px; color: #93a1b5; line-height: 1.25; }
 .kp-out.done { color: #86efac; }
 .kp-empty { color: #cbd5e1; font-size: 13px; text-align: center; padding: 16px 8px; }
+
+/* Jam digital di bawah kamera — terbaca tapi tidak mengganggu */
+.cam-clock {
+  position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+  z-index: 4; display: flex; flex-direction: column; align-items: center;
+  padding: 6px 20px; border-radius: 14px;
+  background: rgba(8, 14, 28, 0.40);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+.cam-clock .clock-time {
+  font-size: 30px; font-weight: 800; line-height: 1.1; letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.cam-clock .clock-date { font-size: 12.5px; color: #d4dbe6; }
+.video-wrap:fullscreen .cam-clock { bottom: 22px; padding: 8px 26px; }
+.video-wrap:fullscreen .cam-clock .clock-time { font-size: 44px; }
+.video-wrap:fullscreen .cam-clock .clock-date { font-size: 15px; }
+
+/* Rekap bulanan: kartu juara & medali */
+.champion {
+  display: flex; align-items: center; gap: 16px;
+  background: linear-gradient(135deg, var(--primary-soft), transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
+}
+.champion .medal { font-size: 44px; }
+.champion .who { font-size: 20px; font-weight: 800; }
+.champion .pts { margin-left: auto; text-align: right; }
+.champion .pts .n { font-size: 30px; font-weight: 800; color: var(--primary); line-height: 1; }
+.rank-badge {
+  display: inline-grid; place-items: center; width: 26px; height: 26px;
+  border-radius: 8px; font-weight: 800; font-size: 13px;
+  background: var(--surface-2); color: var(--muted);
+}
+.rank-badge.top { background: var(--primary-soft); color: var(--primary); }
+.pts-cell { font-weight: 800; color: var(--primary); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; }
+.legend .chip {
+  font-size: 12.5px; font-weight: 600; color: var(--text-soft);
+  background: var(--surface-2); border: 1px solid var(--border);
+  padding: 5px 11px; border-radius: 999px;
+}
 
 /* ----------------------- Mode layar penuh (kiosk) ---------------------- */
 .video-wrap:fullscreen,

@@ -86,9 +86,11 @@
 
   function drawBox(ctx, box, color) {
     // Koordinat deteksi sudah dalam piksel video; canvas berukuran sama.
+    // Mode cermin: balik X agar sejajar dengan video yang dibalik.
+    const bx = overlay.width - box.x - box.width;
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
-    ctx.strokeRect(box.x, box.y, box.width, box.height);
+    ctx.strokeRect(bx, box.y, box.width, box.height);
   }
 
   async function capture() {
