@@ -1,6 +1,9 @@
+'use strict';
+
 // Endpoint status JSON untuk pemantauan eksternal.
 // Serverless function Vercel di /api/status (CORS aktif, tidak di-cache).
-export default function handler(req, res) {
+// Catatan: ditulis CommonJS agar konsisten dengan project ("type":"commonjs").
+module.exports = function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
   res.setHeader("Cache-Control", "no-store, max-age=0");
@@ -17,4 +20,4 @@ export default function handler(req, res) {
     uptimeSec: Math.round(process.uptime()),
     time: new Date().toISOString(),
   });
-}
+};
