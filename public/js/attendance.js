@@ -635,25 +635,21 @@
         await loadPresentToday();
       } else if (result.status === 'already_in') {
         presentToday.add(member.id);
-        if (weekend) {
-          // Akhir pekan: tidak ada sangsi; pesan ramah (bukan peringatan merah).
-          toast('Sudah absen (Overtime)', `${member.name}, scan lagi nanti untuk absen pulang.`, 'info', 3500);
-        } else {
-          const late = result.record.lateMinutes || 0;
-          const checkIn = result.record.checkIn || result.record.timestamp;
-          const msg = late > 0
-            ? `⛔ SANGSI ${sanctionHours(late)} JAM — absen pulang jam ${allowedCheckoutLabel(late)}`
-            : `Jam pulang ${WORK.endLabel}`;
-          // Peringatan BESAR satu layar (bukan toast kecil).
-          showFlash({
-            title: 'BELUM WAKTUNYA PULANG',
-            name: member.name,
-            time: formatTime(checkIn),
-            timeLabel: 'Sudah absen masuk pukul',
-            sanction: msg,
-            type: 'warn',
-          });
-        }
+        // Sudah absen masuk & belum jam pulang -> tidak bisa absen lagi.
+        const late = result.record.lateMinutes || 0;
+        const checkIn = result.record.checkIn || result.record.timestamp;
+        const msg = late > 0
+          ? `⛔ SANGSI ${sanctionHours(late)} JAM — absen pulang jam ${allowedCheckoutLabel(late)}`
+          : `Absen pulang baru bisa jam ${WORK.endLabel}`;
+        // Peringatan BESAR satu layar (bukan toast kecil).
+        showFlash({
+          title: 'BELUM WAKTUNYA PULANG',
+          name: member.name,
+          time: formatTime(checkIn),
+          timeLabel: 'Sudah absen masuk pukul',
+          sanction: msg,
+          type: 'warn',
+        });
       } else if (result.status === 'already_out') {
         showFlash({
           title: 'SUDAH ABSEN LENGKAP',
