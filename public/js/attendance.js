@@ -229,7 +229,8 @@
     kioskPresentList.innerHTML = '';
     for (const r of sorted) {
       const checkIn = r.checkIn || r.timestamp;
-      const late = lateMinutesFrom(checkIn);
+      const weekend = isWeekend(r.date);
+      const late = weekend ? 0 : lateMinutesFrom(checkIn);
       const row = document.createElement('div');
       row.className = 'kp-row';
       row.appendChild(makeAvatar(r.name, 34));
@@ -240,7 +241,8 @@
       name.textContent = r.name;
       const tin = document.createElement('span');
       tin.className = 'kp-time';
-      tin.textContent = `${late > 0 ? '⏰' : '✔'} Masuk ${formatTime(checkIn)}`;
+      const icon = weekend ? '🌟' : (late > 0 ? '⏰' : '✔');
+      tin.textContent = `${icon} Masuk ${formatTime(checkIn)}${weekend ? ' (OT)' : ''}`;
       const tout = document.createElement('span');
       tout.className = 'kp-out';
       if (r.checkOut) {
@@ -545,7 +547,7 @@
   }
 
   // Tampilkan overlay besar (sukses / pulang / peringatan) di atas kamera.
-  function showFlash({ title, name, time, timeLabel = 'Pukul', lateMinutes = 0, sanction = '', type = 'success' }) {
+  function showFlash({ title, name, time, timeLabel = 'Pukul', lateMinutes = 0, sanction = '', overtime = false, type = 'success' }) {
     flash.classList.remove('out', 'warn');
     if (type === 'out') flash.classList.add('out');
     if (type === 'warn') flash.classList.add('warn');
@@ -554,7 +556,12 @@
     flashName.textContent = name;
     flashTime.textContent = time ? `${timeLabel} ${time}` : '';
 
-    if (lateMinutes > 0) {
+    flashLate.classList.remove('ot');
+    if (overtime) {
+      flashLate.textContent = '🌟 OVERTIME (LEMBUR) — nilai tambahan';
+      flashLate.classList.add('ot');
+      flashLate.classList.remove('hide');
+    } else if (lateMinutes > 0) {
       flashLate.textContent = `⏰ TERLAMBAT ${formatLate(lateMinutes)}`;
       flashLate.classList.remove('hide');
     } else {
@@ -586,7 +593,9 @@
 
     const nowDate = new Date();
     const nowMin = minutesOfDay(nowDate);
-    const lateMinutes = Math.max(0, nowMin - WORK.START);
+    const weekend = isWeekend(localDate());
+    // Akhir pekan = overtime: tidak dihitung terlambat (lateMinutes = 0).
+    const lateMinutes = weekend ? 0 : Math.max(0, nowMin - WORK.START);
 
     try {
       const result = await API.recordAttendance({
@@ -603,15 +612,16 @@
         const late = result.record.lateMinutes || 0;
         const checkIn = result.record.checkIn || result.record.timestamp;
         // Bila terlambat: tampilkan sangsi waktu (jam pulang dimajukan).
-        const sanction = late > 0
+        const sanction = (!weekend && late > 0)
           ? `⛔ SANGSI ${sanctionHours(late)} JAM — baru boleh absen pulang jam ${allowedCheckoutLabel(late)}`
           : '';
         showFlash({
           title: 'ABSEN BERHASIL',
           name: member.name,
           time: formatTime(checkIn),
-          lateMinutes: late,
+          lateMinutes: weekend ? 0 : late,
           sanction,
+          overtime: weekend,
           type: 'success',
         });
         await loadPresentToday();
@@ -625,20 +635,25 @@
         await loadPresentToday();
       } else if (result.status === 'already_in') {
         presentToday.add(member.id);
-        const late = result.record.lateMinutes || 0;
-        const checkIn = result.record.checkIn || result.record.timestamp;
-        const msg = late > 0
-          ? `⛔ SANGSI ${sanctionHours(late)} JAM — absen pulang jam ${allowedCheckoutLabel(late)}`
-          : `Jam pulang ${WORK.endLabel}`;
-        // Peringatan BESAR satu layar (bukan toast kecil).
-        showFlash({
-          title: 'BELUM WAKTUNYA PULANG',
-          name: member.name,
-          time: formatTime(checkIn),
-          timeLabel: 'Sudah absen masuk pukul',
-          sanction: msg,
-          type: 'warn',
-        });
+        if (weekend) {
+          // Akhir pekan: tidak ada sangsi; pesan ramah (bukan peringatan merah).
+          toast('Sudah absen (Overtime)', `${member.name}, scan lagi nanti untuk absen pulang.`, 'info', 3500);
+        } else {
+          const late = result.record.lateMinutes || 0;
+          const checkIn = result.record.checkIn || result.record.timestamp;
+          const msg = late > 0
+            ? `⛔ SANGSI ${sanctionHours(late)} JAM — absen pulang jam ${allowedCheckoutLabel(late)}`
+            : `Jam pulang ${WORK.endLabel}`;
+          // Peringatan BESAR satu layar (bukan toast kecil).
+          showFlash({
+            title: 'BELUM WAKTUNYA PULANG',
+            name: member.name,
+            time: formatTime(checkIn),
+            timeLabel: 'Sudah absen masuk pukul',
+            sanction: msg,
+            type: 'warn',
+          });
+        }
       } else if (result.status === 'already_out') {
         showFlash({
           title: 'SUDAH ABSEN LENGKAP',

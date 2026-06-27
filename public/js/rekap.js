@@ -42,6 +42,7 @@
     const dates = Object.keys(byDate).sort();
 
     for (const date of dates) {
+      const weekend = isWeekend(date);
       // Urutkan dari yang paling pagi masuk.
       const day = byDate[date].slice().sort((a, b) =>
         (a.checkIn || a.timestamp).localeCompare(b.checkIn || b.timestamp)
@@ -50,16 +51,24 @@
         const id = r.memberId;
         const m = (members[id] ||= {
           id, name: r.name, role: r.role || '',
-          hadir: 0, tepat: 0, telat: 0, tercepat: 0,
-          totalLate: 0, sumCheckinMin: 0, points: 0,
+          hadir: 0, tepat: 0, telat: 0, tercepat: 0, overtime: 0,
+          totalLate: 0, sumCheckinMin: 0, weekdayCount: 0, points: 0,
         });
         const checkIn = r.checkIn || r.timestamp;
-        const late = lateMinutesFrom(checkIn);
-        const minOfDay = minutesOfDay(new Date(checkIn));
 
         m.hadir += 1;
         m.points += POINTS.hadir;
-        m.sumCheckinMin += minOfDay;
+
+        if (weekend) {
+          // Akhir pekan = overtime (nilai tambahan), tidak dihitung terlambat.
+          m.overtime += 1;
+          m.points += POINTS.overtime;
+          return;
+        }
+
+        const late = lateMinutesFrom(checkIn);
+        m.weekdayCount += 1;
+        m.sumCheckinMin += minutesOfDay(new Date(checkIn));
 
         if (late <= 0) { m.tepat += 1; m.points += POINTS.tepatWaktu; }
         else { m.telat += 1; m.totalLate += late; if (late > 120) m.points += POINTS.telatBerat; }
@@ -72,10 +81,10 @@
 
     const list = Object.values(members).map((m) => ({
       ...m,
-      avgCheckin: m.hadir ? Math.round(m.sumCheckinMin / m.hadir) : 0,
+      avgCheckin: m.weekdayCount ? Math.round(m.sumCheckinMin / m.weekdayCount) : null,
     }));
     // Peringkat: poin tertinggi; bila seri, rata-rata masuk lebih pagi menang.
-    list.sort((a, b) => b.points - a.points || a.avgCheckin - b.avgCheckin);
+    list.sort((a, b) => b.points - a.points || (a.avgCheckin ?? 9999) - (b.avgCheckin ?? 9999));
     return { list, dayCount: dates.length };
   }
 
@@ -85,7 +94,7 @@
     if (!from || !to) { toast('Tanggal kosong', 'Isi rentang tanggal.', 'warn'); return; }
     if (from > to) { toast('Rentang salah', 'Tanggal "dari" melebihi "sampai".', 'warn'); return; }
 
-    rankRows.innerHTML = '<tr><td colspan="8" class="muted">Memuat…</td></tr>';
+    rankRows.innerHTML = '<tr><td colspan="9" class="muted">Memuat…</td></tr>';
     try {
       const { records } = await API.getAttendanceRange(from, to);
       const { list, dayCount } = aggregate(records);
@@ -99,7 +108,7 @@
       renderLeaderboard(list);
       renderChampion(list);
     } catch (err) {
-      rankRows.innerHTML = `<tr><td colspan="8" class="muted">Gagal memuat: ${err.message}</td></tr>`;
+      rankRows.innerHTML = `<tr><td colspan="9" class="muted">Gagal memuat: ${err.message}</td></tr>`;
     }
   }
 
@@ -108,14 +117,16 @@
     const c = list[0];
     championCard.style.display = 'flex';
     championName.textContent = c.name;
+    const avg = c.avgCheckin != null ? minutesToHHMM(c.avgCheckin) : '—';
+    const ot = c.overtime ? ` · ${c.overtime}× overtime` : '';
     championDetail.textContent =
-      `${c.hadir} hari hadir · ${c.tercepat}× tercepat · rata-rata masuk ${minutesToHHMM(c.avgCheckin)}`;
+      `${c.hadir} hari hadir · ${c.tercepat}× tercepat${ot} · rata-rata masuk ${avg}`;
     championPts.textContent = c.points;
   }
 
   function renderLeaderboard(list) {
     if (list.length === 0) {
-      rankRows.innerHTML = '<tr><td colspan="8" class="muted">Tidak ada data pada rentang ini.</td></tr>';
+      rankRows.innerHTML = '<tr><td colspan="9" class="muted">Tidak ada data pada rentang ini.</td></tr>';
       return;
     }
     const medals = ['🥇', '🥈', '🥉'];
@@ -146,8 +157,9 @@
         cell(`${m.hadir} hari`),
         cell(`${m.tepat}×`),
         m.telat ? badge(`${m.telat}× · ${formatLate(m.totalLate)}`, 'absent') : cell('—'),
+        m.overtime ? badge(`${m.overtime}× OT`, 'role') : cell('—'),
         cell(`${m.tercepat}×`),
-        cell(minutesToHHMM(m.avgCheckin)),
+        cell(m.avgCheckin != null ? minutesToHHMM(m.avgCheckin) : '—'),
         ptsCell(m.points),
       );
       rankRows.appendChild(tr);
@@ -164,10 +176,11 @@
 
   function exportCSV() {
     if (leaderboard.length === 0) { toast('Tidak ada data', 'Tampilkan rekap dulu.', 'warn'); return; }
-    const header = ['Peringkat', 'Nama', 'Jabatan', 'Hari Hadir', 'Tepat Waktu', 'Terlambat', 'Total Menit Telat', 'Kali Tercepat', 'Rata-rata Masuk', 'Poin'];
+    const header = ['Peringkat', 'Nama', 'Jabatan', 'Hari Hadir', 'Tepat Waktu', 'Terlambat', 'Total Menit Telat', 'Overtime (hari)', 'Kali Tercepat', 'Rata-rata Masuk', 'Poin'];
     const lines = [header.join(',')];
     leaderboard.forEach((m, i) => {
-      const cells = [i + 1, m.name, m.role || '', m.hadir, m.tepat, m.telat, m.totalLate, m.tercepat, minutesToHHMM(m.avgCheckin), m.points];
+      const avg = m.avgCheckin != null ? minutesToHHMM(m.avgCheckin) : '';
+      const cells = [i + 1, m.name, m.role || '', m.hadir, m.tepat, m.telat, m.totalLate, m.overtime, m.tercepat, avg, m.points];
       lines.push(cells.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(','));
     });
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });

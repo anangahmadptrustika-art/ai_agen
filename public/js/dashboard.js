@@ -13,8 +13,8 @@
   const statAbsent = document.getElementById('statAbsent');
   const exportBtn = document.getElementById('exportBtn');
 
-  // Keterlambatan (menit) dari sebuah record, dihitung dari jam masuk lokal.
-  const recLate = (r) => lateMinutesFrom(r.checkIn || r.timestamp);
+  // Keterlambatan (menit) — akhir pekan dihitung 0 (overtime).
+  const recLate = (r) => attendanceLate(r);
 
   let currentRecords = [];
   let currentDate = '';
@@ -60,19 +60,24 @@
     for (const r of sorted) {
       const checkIn = r.checkIn || r.timestamp;
       const late = recLate(r);
+      const weekend = isWeekend(r.date);
       // Jam pulang: jika sudah pulang tampilkan waktunya; jika belum & terlambat
       // tampilkan jam pulang minimal akibat sangsi.
       let pulang = '—';
       if (r.checkOut) pulang = formatTime(r.checkOut) + (r.autoCheckout ? ' (auto)' : '');
       else if (late > 0) pulang = `≥ ${allowedCheckoutLabel(late)} (sangsi)`;
       const tr = document.createElement('tr');
+      const telatCell = weekend ? badgeCell('Overtime', 'role')
+        : (late > 0 ? badgeCell(formatLate(late), 'absent') : textCell('—'));
+      const statusCell = weekend ? badgeCell('🌟 Overtime', 'role')
+        : badgeCell(late > 0 ? 'Terlambat' : 'Tepat waktu', late > 0 ? 'absent' : 'present');
       tr.append(
         personCell(r.name),
         textCell(r.role || '-'),
         textCell(formatTime(checkIn)),
-        late > 0 ? badgeCell(formatLate(late), 'absent') : textCell('—'),
+        telatCell,
         textCell(pulang),
-        badgeCell(late > 0 ? 'Terlambat' : 'Tepat waktu', late > 0 ? 'absent' : 'present')
+        statusCell
       );
       presentRows.appendChild(tr);
     }

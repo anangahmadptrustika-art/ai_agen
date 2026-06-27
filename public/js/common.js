@@ -120,7 +120,24 @@ const POINTS = {
   tercepat2: 3,      // tercepat ke-2
   tercepat3: 1,      // tercepat ke-3
   telatBerat: -1,    // terlambat > 120 menit
+  overtime: 5,       // hadir di hari Sabtu/Minggu (nilai tambahan)
 };
+
+/* --------------------------- Akhir pekan ------------------------------ */
+/* True bila tanggal (YYYY-MM-DD) jatuh pada Sabtu atau Minggu. */
+function isWeekend(dateStr) {
+  if (!dateStr) return false;
+  const p = String(dateStr).split('-').map(Number);
+  const wd = new Date(p[0], p[1] - 1, p[2]).getDay(); // 0=Minggu, 6=Sabtu
+  return wd === 0 || wd === 6;
+}
+
+/* Keterlambatan efektif sebuah record: di akhir pekan = 0 (overtime). */
+function attendanceLate(record) {
+  if (!record) return 0;
+  if (isWeekend(record.date)) return 0;
+  return lateMinutesFrom(record.checkIn || record.timestamp);
+}
 
 /* Toast notifikasi sederhana. */
 function toast(title, message = '', type = 'info', ms = 3200) {
