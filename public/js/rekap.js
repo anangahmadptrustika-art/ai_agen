@@ -108,7 +108,14 @@
       renderLeaderboard(list);
       renderChampion(list);
     } catch (err) {
-      rankRows.innerHTML = `<tr><td colspan="9" class="muted">Gagal memuat: ${err.message}</td></tr>`;
+      rankRows.innerHTML = '';
+      const tr = document.createElement('tr');
+      const td = document.createElement('td');
+      td.colSpan = 9;
+      td.className = 'muted';
+      td.textContent = 'Gagal memuat: ' + err.message; // textContent -> tidak ada XSS
+      tr.appendChild(td);
+      rankRows.appendChild(tr);
     }
   }
 
